@@ -1,0 +1,54 @@
+import { createBrowserRouter } from "react-router";
+import { LandingPage } from "./pages/LandingPage";
+import { LoginPage } from "./pages/LoginPage";
+import { FleetOwnerDashboard } from "./pages/FleetOwnerDashboard";
+import { DriverDashboard } from "./pages/DriverDashboard";
+import { ShipperDashboard } from "./pages/ShipperDashboard";
+import { AdminDashboard } from "./pages/AdminDashboard";
+import { TruckManagement } from "./pages/TruckManagement";
+import { DriverManagement } from "./pages/DriverManagement";
+import { LoadManagement } from "./pages/LoadManagement";
+import { NotFoundPage } from "./pages/NotFoundPage";
+
+export const router = createBrowserRouter([
+  {
+    path: "/",
+    Component: LandingPage,
+  },
+  {
+    path: "/login",
+    Component: LoginPage,
+  },
+  {
+    path: "/fleet-owner",
+    Component: FleetOwnerDashboard,
+  },
+  {
+    path: "/fleet-owner/trucks",
+    Component: TruckManagement,
+  },
+  {
+    path: "/fleet-owner/drivers",
+    Component: DriverManagement,
+  },
+  {
+    path: "/fleet-owner/loads",
+    Component: LoadManagement,
+  },
+  {
+    path: "/driver",
+    Component: DriverDashboard,
+  },
+  {
+    path: "/shipper",
+    Component: ShipperDashboard,
+  },
+  {
+    path: "/admin",
+    Component: AdminDashboard,
+  },
+  {
+    path: "*",
+    Component: NotFoundPage,
+  },
+]);
