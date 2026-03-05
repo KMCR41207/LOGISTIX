@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { 
   Users, 
@@ -44,6 +45,8 @@ const recentActivity = [
 ];
 
 export function AdminDashboard() {
+  const navigate = useNavigate();
+  
   return (
     <DashboardLayout role="admin" userName="Admin User">
       <div className="space-y-6">
@@ -153,7 +156,7 @@ export function AdminDashboard() {
             <div className="text-xs text-blue-200">+45 this month</div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-xl p-6 text-white">
+          <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-xl p-6 text-white cursor-pointer hover:shadow-lg transition" onClick={() => navigate("/admin/drivers")}>
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
                 <Users className="w-6 h-6" />
@@ -163,6 +166,9 @@ export function AdminDashboard() {
             <div className="text-3xl font-bold mb-1">2,150</div>
             <div className="text-green-100 text-sm font-semibold mb-1">Active Drivers</div>
             <div className="text-xs text-green-200">+230 this month</div>
+            <div className="mt-4 pt-4 border-t border-green-400 text-center">
+              <p className="text-xs text-green-100 font-semibold">Click to view all drivers →</p>
+            </div>
           </div>
 
           <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl p-6 text-white">

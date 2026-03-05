@@ -8,6 +8,8 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { TruckManagement } from "./pages/TruckManagement";
 import { DriverManagement } from "./pages/DriverManagement";
 import { LoadManagement } from "./pages/LoadManagement";
+import { DriverProfile } from "./pages/DriverProfile";
+import { DriversList } from "./pages/DriversList";
 import { NotFoundPage } from "./pages/NotFoundPage";
 
 export const router = createBrowserRouter([
@@ -40,12 +42,20 @@ export const router = createBrowserRouter([
     Component: DriverDashboard,
   },
   {
+    path: "/driver/:driverId",
+    Component: DriverProfile,
+  },
+  {
     path: "/shipper",
     Component: ShipperDashboard,
   },
   {
     path: "/admin",
     Component: AdminDashboard,
+  },
+  {
+    path: "/admin/drivers",
+    Component: DriversList,
   },
   {
     path: "*",
