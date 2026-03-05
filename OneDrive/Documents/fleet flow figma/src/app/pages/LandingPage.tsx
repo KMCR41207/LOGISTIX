@@ -289,6 +289,168 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* About Section */}
+      <section id="about" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">About Logistix</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Revolutionizing the logistics industry with technology that connects people and optimizes operations
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
+            {/* What is Logistix */}
+            <div>
+              <h3 className="text-3xl font-bold text-gray-900 mb-6">What is Logistix?</h3>
+              <p className="text-lg text-gray-700 mb-4">
+                Logistix is a comprehensive digital platform designed to revolutionize the freight logistics industry. We connect three key players in the supply chain: <strong>Fleet Owners</strong>, <strong>Drivers</strong>, and <strong>Shippers</strong> into one unified ecosystem.
+              </p>
+              <p className="text-lg text-gray-700 mb-4">
+                Our mission is to eliminate inefficiencies, reduce operational costs, and create transparent, profitable relationships between all stakeholders in the logistics network.
+              </p>
+              <p className="text-lg text-gray-700">
+                Built with cutting-edge technology, Logistix provides real-time tracking, intelligent load matching, and comprehensive analytics to help your business scale faster than ever before.
+              </p>
+            </div>
+
+            {/* Why Logistix */}
+            <div className="bg-blue-50 p-8 rounded-xl border border-blue-200">
+              <h3 className="text-3xl font-bold text-gray-900 mb-6">Why Choose Logistix?</h3>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold">✓</div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">All-in-One Platform</h4>
+                    <p className="text-gray-600 text-sm">No need for multiple tools - manage everything from one dashboard</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold">✓</div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Real-Time Visibility</h4>
+                    <p className="text-gray-600 text-sm">Track every truck, load, and delivery in real-time with GPS accuracy</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold">✓</div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Increased Profitability</h4>
+                    <p className="text-gray-600 text-sm">Optimize routes, reduce empty miles, and maximize revenue per truck</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold">✓</div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Trusted Network</h4>
+                    <p className="text-gray-600 text-sm">Verified users and secure transactions for peace of mind</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* How It Works */}
+          <div className="mb-16">
+            <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">How Logistix Works</h3>
+            <div className="grid md:grid-cols-3 gap-8">
+              {/* Step 1 */}
+              <div className="bg-white p-8 rounded-xl border-2 border-blue-600 shadow-lg">
+                <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-4">1</div>
+                <h4 className="text-xl font-bold text-gray-900 mb-3">Shippers Post Loads</h4>
+                <p className="text-gray-600">
+                  Shippers create detailed load postings with pickup/delivery locations, cargo details, and pricing. Our system instantly matches them with available fleet owners.
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="bg-white p-8 rounded-xl border-2 border-green-600 shadow-lg">
+                <div className="w-12 h-12 bg-green-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-4">2</div>
+                <h4 className="text-xl font-bold text-gray-900 mb-3">Fleet Owners Accept & Assign</h4>
+                <p className="text-gray-600">
+                  Fleet owners review available loads and assign them to their drivers. Our intelligent matching ensures optimal truck utilization and faster delivery times.
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="bg-white p-8 rounded-xl border-2 border-purple-600 shadow-lg">
+                <div className="w-12 h-12 bg-purple-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-4">3</div>
+                <h4 className="text-xl font-bold text-gray-900 mb-3">Drivers Execute & Track</h4>
+                <p className="text-gray-600">
+                  Drivers accept jobs, navigate to pickup/delivery locations, and update status in real-time. Everyone stays informed throughout the entire journey.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Key Benefits */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-2xl p-12">
+            <h3 className="text-3xl font-bold mb-8 text-center">Key Benefits for Everyone</h3>
+            <div className="grid md:grid-cols-3 gap-8">
+              <div>
+                <h4 className="text-xl font-bold mb-3">For Fleet Owners</h4>
+                <ul className="space-y-2 text-blue-100">
+                  <li>✓ Maximize truck utilization</li>
+                  <li>✓ Reduce empty miles</li>
+                  <li>✓ Real-time fleet visibility</li>
+                  <li>✓ Detailed financial analytics</li>
+                  <li>✓ Driver performance tracking</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-xl font-bold mb-3">For Drivers</h4>
+                <ul className="space-y-2 text-blue-100">
+                  <li>✓ Consistent job opportunities</li>
+                  <li>✓ Fair compensation</li>
+                  <li>✓ Easy job management</li>
+                  <li>✓ Transparent earnings tracking</li>
+                  <li>✓ Build reputation & ratings</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-xl font-bold mb-3">For Shippers</h4>
+                <ul className="space-y-2 text-blue-100">
+                  <li>✓ Reliable delivery partners</li>
+                  <li>✓ Real-time shipment tracking</li>
+                  <li>✓ Competitive pricing</li>
+                  <li>✓ Verified fleet owners</li>
+                  <li>✓ Transparent communication</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="relative py-20 text-white overflow-hidden bg-gray-900">
+        {/* Video Background */}
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/fleet-flow-video.mp4" type="video/mp4" />
+        </video>
+        
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <Shield className="w-16 h-16 mx-auto mb-6 drop-shadow-lg" />
+          <h2 className="text-4xl font-bold mb-4 drop-shadow-lg">Ready to Transform Your Logistics?</h2>
+          <p className="text-xl mb-8 text-white drop-shadow-md">
+            Join thousands of fleet owners, drivers, and shippers already using Logistix
+          </p>
+          <button 
+            onClick={() => navigate("/login")}
+            className="px-8 py-4 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition text-lg shadow-xl"
+          >
+            Start Your Free Trial
+          </button>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
