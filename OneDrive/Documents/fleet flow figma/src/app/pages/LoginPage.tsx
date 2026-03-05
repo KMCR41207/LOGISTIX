@@ -23,8 +23,8 @@ export function LoginPage() {
     e.preventDefault();
     setError("");
 
-    // Check if user ID exists (case-insensitive)
-    const normalizedUserId = userId.toUpperCase();
+    // Check if user ID exists (case-insensitive) - trim and clean input
+    const normalizedUserId = userId.trim().toUpperCase().replace(/^:/, "");
     const user = users[normalizedUserId as keyof typeof users];
     
     if (!user) {
@@ -82,7 +82,7 @@ export function LoginPage() {
                 <input 
                   type="text"
                   value={userId}
-                  onChange={(e) => setUserId(e.target.value.toUpperCase())}
+                  onChange={(e) => setUserId(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
                   className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                   placeholder="Enter your User ID"
                   required
@@ -140,21 +140,24 @@ export function LoginPage() {
               <div className="bg-gray-50 p-2 rounded">
                 <div className="font-semibold">Admin</div>
                 <div>ID: ADMIN001</div>
+                <div className="text-gray-400">Pass: admin123</div>
               </div>
               <div className="bg-gray-50 p-2 rounded">
                 <div className="font-semibold">Fleet Owner</div>
                 <div>ID: FO001</div>
+                <div className="text-gray-400">Pass: fleet123</div>
               </div>
               <div className="bg-gray-50 p-2 rounded">
                 <div className="font-semibold">Driver</div>
                 <div>ID: DR001</div>
+                <div className="text-gray-400">Pass: driver123</div>
               </div>
               <div className="bg-gray-50 p-2 rounded">
                 <div className="font-semibold">Shipper</div>
                 <div>ID: SH001</div>
+                <div className="text-gray-400">Pass: shipper123</div>
               </div>
             </div>
-            <p className="text-xs text-gray-400 text-center mt-2">All demo passwords: Use respective role password</p>
           </div>
 
           {/* Admin Note */}
