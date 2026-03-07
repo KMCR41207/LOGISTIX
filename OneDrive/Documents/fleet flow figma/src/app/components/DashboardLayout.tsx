@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { 
   Truck, 
@@ -9,7 +9,8 @@ import {
   LogOut,
   Menu,
   Bell,
-  Search
+  Search,
+  ChevronDown
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -21,6 +22,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, role, userName }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigation = {
     "fleet-owner": [
@@ -48,17 +50,13 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
 
   const currentNav = navigation[role];
 
-  const handleLogout = () => {
-    navigate("/login");
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top Navigation */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
+            {/* Logo and Menu */}
             <div className="flex items-center gap-3">
               <img 
                 src="/logo.png" 
@@ -68,6 +66,67 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
               <div>
                 <div className="text-lg font-bold text-gray-900">Logistix</div>
                 <div className="text-xs text-gray-500 capitalize">{role.replace("-", " ")}</div>
+              </div>
+
+              {/* Dropdown Menu */}
+              <div className="ml-8 relative">
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                >
+                  <Menu className="w-5 h-5" />
+                  <span className="text-sm font-medium">Menu</span>
+                  <ChevronDown className={`w-4 h-4 transition ${isMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown Content */}
+                {isMenuOpen && (
+                  <div className="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <nav className="p-2 space-y-1">
+                      {currentNav.map((item) => {
+                        const isActive = location.pathname === item.href;
+                        return (
+                          <button
+                            key={item.name}
+                            onClick={() => {
+                              navigate(item.href);
+                              setIsMenuOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+                              isActive
+                                ? "bg-blue-50 text-blue-700 font-semibold"
+                                : "text-gray-700 hover:bg-gray-50"
+                            }`}
+                          >
+                            <item.icon className="w-5 h-5" />
+                            {item.name}
+                          </button>
+                        );
+                      })}
+                    </nav>
+
+                    {/* Divider */}
+                    <div className="border-t border-gray-200"></div>
+
+                    {/* Bottom Actions */}
+                    <div className="p-2 space-y-1">
+                      <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                        <Settings className="w-5 h-5" />
+                        Settings
+                      </button>
+                      <button 
+                        onClick={() => {
+                          navigate("/login");
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition"
+                      >
+                        <LogOut className="w-5 h-5" />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -105,44 +164,6 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] sticky top-16">
-          <nav className="p-4 space-y-1">
-            {currentNav.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <button
-                  key={item.name}
-                  onClick={() => navigate(item.href)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
-                    isActive
-                      ? "bg-blue-50 text-blue-700 font-semibold"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  {item.name}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Bottom Actions */}
-          <div className="absolute bottom-4 left-4 right-4 space-y-1">
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-              <Settings className="w-5 h-5" />
-              Settings
-            </button>
-            <button 
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition"
-            >
-              <LogOut className="w-5 h-5" />
-              Logout
-            </button>
-          </div>
-        </aside>
-
         {/* Main Content */}
         <main className="flex-1 p-8">
           {children}
