@@ -306,6 +306,7 @@ export function LandingPage() {
                 <span className="text-white font-bold">Logistix</span>
               </div>
               <p className="text-sm">by SVLT</p>
+              <p className="text-xs text-gray-500 mt-1">K.Mani Charan Reddy</p>
             </div>
             <div>
               <h3 className="text-white font-semibold mb-4">Product</h3>
@@ -333,7 +334,8 @@ export function LandingPage() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
-            © 2026 Logistix by SVLT. All rights reserved.
+            <p>© 2026 Logistix by SVLT. All rights reserved.</p>
+            <p className="text-xs text-gray-500 mt-2">Developed by K.Mani Charan Reddy</p>
           </div>
         </div>
       </footer>

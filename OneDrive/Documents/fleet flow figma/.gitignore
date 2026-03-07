@@ -12,6 +12,15 @@ build/
 # IDE
 .vscode/
 .idea/
+.kiro/
+.cursor/
+.gemini/
+.antigravity/
+
+# System directories
+AppData/
+.aws/
+.cache/
 
 # OS
 .DS_Store
