@@ -1,5 +1,5 @@
 import { DashboardLayout } from "../components/DashboardLayout";
-import { Users, Search, MoreVertical, X, Eye, Ban, AlertCircle, Trash2 } from "lucide-react";
+import { Users, Search, MoreVertical, X, Eye, Ban, AlertCircle, Trash2, Edit } from "lucide-react";
 import { useState } from "react";
 
 export function AdminUsers() {
@@ -11,7 +11,9 @@ export function AdminUsers() {
   ]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [editingUser, setEditingUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     userId: "",
     password: "",
@@ -77,9 +79,29 @@ export function AdminUsers() {
     }
   };
 
+  const handleEditProfile = (user: any) => {
+    setEditingUser(user);
+    setIsEditModalOpen(true);
+    setOpenMenuId(null);
+  };
+
+  const handleSaveEditProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingUser) {
+      setUsers(users.map(user =>
+        user.id === editingUser.id
+          ? { ...user, name: editingUser.name, role: editingUser.role }
+          : user
+      ));
+      setIsEditModalOpen(false);
+      setEditingUser(null);
+      alert("User profile updated successfully!");
+    }
+  };
+
   return (
     <DashboardLayout role="admin" userName="Admin">
-      <div className="space-y-6">
+      <div className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto pr-4">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Users Management</h1>
@@ -154,6 +176,13 @@ export function AdminUsers() {
                         >
                           <Eye className="w-5 h-5 text-blue-600" />
                           <span>View Profile</span>
+                        </button>
+                        <button
+                          onClick={() => handleEditProfile(user)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition border-b border-gray-100"
+                        >
+                          <Edit className="w-5 h-5 text-green-600" />
+                          <span>Edit Profile</span>
                         </button>
                         <button
                           onClick={() => handleSuspendUser(user.id)}
@@ -276,6 +305,84 @@ export function AdminUsers() {
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
                   >
                     Create User
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Profile Modal */}
+      {isEditModalOpen && editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl">
+            {/* Close Button */}
+            <button 
+              onClick={() => setIsEditModalOpen(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition"
+            >
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
+
+            {/* Modal Content */}
+            <div className="p-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit User Profile</h2>
+
+              <form onSubmit={handleSaveEditProfile} className="space-y-5">
+                {/* User ID (Read-only) */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">User ID</label>
+                  <input 
+                    type="text"
+                    value={editingUser.id}
+                    disabled
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 outline-none"
+                  />
+                </div>
+
+                {/* User Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                  <input 
+                    type="text"
+                    value={editingUser.name}
+                    onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                    placeholder="Enter full name"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    required
+                  />
+                </div>
+
+                {/* Role Selection */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Role</label>
+                  <select 
+                    value={editingUser.role}
+                    onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  >
+                    <option value="Admin">Admin</option>
+                    <option value="Fleet Owner">Fleet Owner</option>
+                    <option value="Driver">Driver</option>
+                    <option value="Shipper">Shipper</option>
+                  </select>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <button 
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
+                  >
+                    Save Changes
                   </button>
                 </div>
               </form>
