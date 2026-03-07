@@ -5,6 +5,9 @@ import { FleetOwnerDashboard } from "./pages/FleetOwnerDashboard";
 import { DriverDashboard } from "./pages/DriverDashboard";
 import { ShipperDashboard } from "./pages/ShipperDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
+import { AdminUsers } from "./pages/AdminUsers";
+import { AdminFleetOwners } from "./pages/AdminFleetOwners";
+import { AdminAnalytics } from "./pages/AdminAnalytics";
 import { TruckManagement } from "./pages/TruckManagement";
 import { DriverManagement } from "./pages/DriverManagement";
 import { LoadManagement } from "./pages/LoadManagement";
@@ -52,6 +55,18 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     Component: AdminDashboard,
+  },
+  {
+    path: "/admin/users",
+    Component: AdminUsers,
+  },
+  {
+    path: "/admin/fleet-owners",
+    Component: AdminFleetOwners,
+  },
+  {
+    path: "/admin/analytics",
+    Component: AdminAnalytics,
   },
   {
     path: "/admin/drivers",
