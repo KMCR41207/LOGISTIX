@@ -88,7 +88,7 @@ export function LandingPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-gray-50 border-b border-gray-200">
+      <section className="py-12 bg-gray-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center">
@@ -112,65 +112,83 @@ export function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20">
+      <section id="features" className="py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Everything You Need to Manage Your Fleet</h2>
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Fleet Flow – Features</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Powerful features designed for fleet owners, drivers, and shippers to streamline logistics operations
+              Everything you need to manage your logistics operations efficiently
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <FeatureCard 
-              icon={<Truck className="w-8 h-8" />}
-              title="Fleet Management"
-              description="Manage your entire fleet from one dashboard. Track trucks, assign drivers, and monitor real-time locations."
+              icon={<Package className="w-8 h-8" />}
+              title="Load Marketplace"
+              description="Shippers can post loads with full details such as pickup location, delivery destination, cargo type, and payment. Truck drivers and fleet owners can browse and accept available loads."
               color="blue"
             />
             <FeatureCard 
-              icon={<MapPin className="w-8 h-8" />}
-              title="Real-Time Tracking"
-              description="GPS-enabled tracking for every truck. Know exactly where your assets are at all times."
+              icon={<TrendingUp className="w-8 h-8" />}
+              title="Fleet Management Dashboard"
+              description="Fleet owners can manage their entire fleet from one dashboard and monitor truck activity in real time. See which trucks are running, which drivers are assigned, current load on each truck, and fleet performance."
               color="green"
             />
             <FeatureCard 
-              icon={<DollarSign className="w-8 h-8" />}
-              title="Revenue Analytics"
-              description="Track revenue, costs, and profit per truck. Comprehensive financial dashboards at your fingertips."
+              icon={<MapPin className="w-8 h-8" />}
+              title="Real-Time Truck Tracking"
+              description="Fleet owners can track truck locations on a map and know exactly where their vehicles are during a delivery."
               color="purple"
             />
             <FeatureCard 
-              icon={<Package className="w-8 h-8" />}
-              title="Load Management"
-              description="Shippers post loads, fleet owners assign trucks, drivers accept jobs - all in one seamless workflow."
+              icon={<Users className="w-8 h-8" />}
+              title="Driver Management"
+              description="Fleet owners can assign drivers to trucks and monitor their activity and performance."
               color="orange"
             />
             <FeatureCard 
-              icon={<Users className="w-8 h-8" />}
-              title="Driver Portal"
-              description="Dedicated driver app for accepting loads, updating delivery status, and viewing earnings."
+              icon={<DollarSign className="w-8 h-8" />}
+              title="Revenue & Profit Tracking"
+              description="Fleet Flow automatically tracks revenue from each load, profit per truck, and total fleet earnings. This helps owners understand business performance."
               color="indigo"
             />
             <FeatureCard 
-              icon={<TrendingUp className="w-8 h-8" />}
-              title="Performance Metrics"
-              description="Detailed analytics on fleet performance, driver efficiency, and business growth trends."
+              icon={<Shield className="w-8 h-8" />}
+              title="Load Details Transparency"
+              description="All load information is clearly displayed including pickup location, delivery location, cargo details, payment amount, and delivery schedule."
               color="pink"
+            />
+            <FeatureCard 
+              icon={<Zap className="w-8 h-8" />}
+              title="Smart Notifications"
+              description="Users receive alerts when new loads are posted, jobs are accepted, deliveries are completed, and trucks start or finish trips."
+              color="blue"
+            />
+            <FeatureCard 
+              icon={<Truck className="w-8 h-8" />}
+              title="Easy Job Selection"
+              description="Truck drivers can easily browse available loads and select the jobs that match their route and schedule."
+              color="green"
+            />
+            <FeatureCard 
+              icon={<TrendingUp className="w-8 h-8" />}
+              title="Business Insights"
+              description="Fleet Flow provides analytics to help fleet owners improve efficiency and maximize profits."
+              color="purple"
             />
           </div>
         </div>
       </section>
 
       {/* Platform Users */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-12 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Built for Every Stakeholder</h2>
             <p className="text-xl text-gray-600">Tailored experiences for each role in the logistics ecosystem</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div 
               onClick={() => setSelectedRole('fleet-owner')}
               className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:shadow-xl hover:scale-105 transition-all">
@@ -311,15 +329,14 @@ export function LandingPage() {
             <div>
               <h3 className="text-white font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition">Features</a></li>
-                <li><a href="#" className="hover:text-white transition">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition">Demo</a></li>
+                <li><a href="#features" className="hover:text-white transition">Features</a></li>
+                <li><button onClick={() => setIsVideoModalOpen(true)} className="hover:text-white transition text-left">Demo</button></li>
               </ul>
             </div>
             <div>
               <h3 className="text-white font-semibold mb-4">Company</h3>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition">About</a></li>
+                <li><a href="#about" className="hover:text-white transition">About</a></li>
                 <li><a href="#" className="hover:text-white transition">Contact</a></li>
                 <li><a href="#" className="hover:text-white transition">Careers</a></li>
               </ul>
