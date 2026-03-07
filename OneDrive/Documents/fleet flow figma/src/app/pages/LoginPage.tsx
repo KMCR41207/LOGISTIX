@@ -49,6 +49,12 @@ export function LoginPage() {
     e.preventDefault();
     setError("");
 
+    // If users is empty, show error
+    if (Object.keys(users).length === 0) {
+      setError("System loading, please try again");
+      return;
+    }
+
     // Check if user ID exists (case-insensitive) - trim and clean input
     const normalizedUserId = userId.trim().toUpperCase().replace(/^:/, "");
     const user = users[normalizedUserId as keyof typeof users];
