@@ -1,13 +1,52 @@
 import { DashboardLayout } from "../components/DashboardLayout";
-import { Users, Search, MoreVertical } from "lucide-react";
+import { Users, Search, MoreVertical, X } from "lucide-react";
+import { useState } from "react";
 
 export function AdminUsers() {
-  const users = [
+  const [users, setUsers] = useState([
     { id: "ADMIN001", name: "Admin User", role: "Admin", status: "active", joinDate: "2024-01-01" },
     { id: "FO001", name: "Swift Logistics", role: "Fleet Owner", status: "active", joinDate: "2024-01-15" },
     { id: "DR001", name: "Michael Rodriguez", role: "Driver", status: "active", joinDate: "2024-02-01" },
     { id: "SH001", name: "Global Shippers", role: "Shipper", status: "active", joinDate: "2024-02-10" },
-  ];
+  ]);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    userId: "",
+    password: "",
+    role: "Driver",
+    name: "",
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.userId || !formData.password || !formData.name) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    const newUser = {
+      id: formData.userId,
+      name: formData.name,
+      role: formData.role,
+      status: "active",
+      joinDate: new Date().toISOString().split('T')[0],
+    };
+
+    setUsers([...users, newUser]);
+    setFormData({ userId: "", password: "", role: "Driver", name: "" });
+    setIsModalOpen(false);
+    alert("User created successfully!");
+  };
 
   return (
     <DashboardLayout role="admin" userName="Admin">
@@ -28,8 +67,11 @@ export function AdminUsers() {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             />
           </div>
-          <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold">
-            Add User
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
+          >
+            Create User
           </button>
         </div>
 
@@ -73,6 +115,104 @@ export function AdminUsers() {
           </table>
         </div>
       </div>
+
+      {/* Create User Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl">
+            {/* Close Button */}
+            <button 
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition"
+            >
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
+
+            {/* Modal Content */}
+            <div className="p-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Create New User</h2>
+
+              <form onSubmit={handleCreateUser} className="space-y-5">
+                {/* User Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                  <input 
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Enter full name"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    required
+                  />
+                </div>
+
+                {/* User ID */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">User ID</label>
+                  <input 
+                    type="text"
+                    name="userId"
+                    value={formData.userId}
+                    onChange={handleInputChange}
+                    placeholder="e.g., FO002, DR003, SH002"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Format: FO (Fleet Owner), DR (Driver), SH (Shipper), ADMIN</p>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                  <input 
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder="Enter password"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    required
+                  />
+                </div>
+
+                {/* Role Selection */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Role</label>
+                  <select 
+                    name="role"
+                    value={formData.role}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  >
+                    <option value="Admin">Admin</option>
+                    <option value="Fleet Owner">Fleet Owner</option>
+                    <option value="Driver">Driver</option>
+                    <option value="Shipper">Shipper</option>
+                  </select>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <button 
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
+                  >
+                    Create User
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
