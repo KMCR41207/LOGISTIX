@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Truck, User, Lock } from "lucide-react";
 
@@ -7,17 +7,43 @@ export function LoginPage() {
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [users, setUsers] = useState<any>({});
 
-  // Mock user database - In production, this would be in your backend
-  const users = {
-    "ADMIN001": { role: "admin", password: "admin123" },
-    "FO001": { role: "fleet-owner", password: "fleet123" },
-    "FO002": { role: "fleet-owner", password: "fleet123" },
-    "DR001": { role: "driver", password: "driver123" },
-    "DR002": { role: "driver", password: "driver123" },
-    "SH001": { role: "shipper", password: "shipper123" },
-    "SH002": { role: "shipper", password: "shipper123" },
-  };
+  // Load users from localStorage on component mount
+  useEffect(() => {
+    const savedUsers = localStorage.getItem('logistix_users');
+    if (savedUsers) {
+      const userList = JSON.parse(savedUsers);
+      const userMap: any = {};
+      
+      userList.forEach((user: any) => {
+        const roleMap: any = {
+          "Admin": "admin",
+          "Fleet Owner": "fleet-owner",
+          "Driver": "driver",
+          "Shipper": "shipper",
+        };
+        userMap[user.id] = { 
+          role: roleMap[user.role], 
+          password: "password123", // Default password for new users
+          name: user.name 
+        };
+      });
+      
+      setUsers(userMap);
+    } else {
+      // Default users if no saved users
+      setUsers({
+        "ADMIN001": { role: "admin", password: "admin123", name: "Admin User" },
+        "FO001": { role: "fleet-owner", password: "fleet123", name: "Swift Logistics" },
+        "FO002": { role: "fleet-owner", password: "fleet123", name: "Fleet Owner 2" },
+        "DR001": { role: "driver", password: "driver123", name: "Michael Rodriguez" },
+        "DR002": { role: "driver", password: "driver123", name: "Driver 2" },
+        "SH001": { role: "shipper", password: "shipper123", name: "Global Shippers" },
+        "SH002": { role: "shipper", password: "shipper123", name: "Shipper 2" },
+      });
+    }
+  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();

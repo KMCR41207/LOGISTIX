@@ -1,14 +1,20 @@
 import { DashboardLayout } from "../components/DashboardLayout";
 import { Users, Search, MoreVertical, X, Eye, Ban, AlertCircle, Trash2, Edit } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function AdminUsers() {
-  const [users, setUsers] = useState([
-    { id: "ADMIN001", name: "Admin User", role: "Admin", status: "active", joinDate: "2024-01-01" },
-    { id: "FO001", name: "Swift Logistics", role: "Fleet Owner", status: "active", joinDate: "2024-01-15" },
-    { id: "DR001", name: "Michael Rodriguez", role: "Driver", status: "active", joinDate: "2024-02-01" },
-    { id: "SH001", name: "Global Shippers", role: "Shipper", status: "active", joinDate: "2024-02-10" },
-  ]);
+  const [users, setUsers] = useState(() => {
+    const savedUsers = localStorage.getItem('logistix_users');
+    if (savedUsers) {
+      return JSON.parse(savedUsers);
+    }
+    return [
+      { id: "ADMIN001", name: "Admin User", role: "Admin", status: "active", joinDate: "2024-01-01" },
+      { id: "FO001", name: "Swift Logistics", role: "Fleet Owner", status: "active", joinDate: "2024-01-15" },
+      { id: "DR001", name: "Michael Rodriguez", role: "Driver", status: "active", joinDate: "2024-02-01" },
+      { id: "SH001", name: "Global Shippers", role: "Shipper", status: "active", joinDate: "2024-02-10" },
+    ];
+  });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -20,6 +26,11 @@ export function AdminUsers() {
     role: "Driver",
     name: "",
   });
+
+  // Save users to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('logistix_users', JSON.stringify(users));
+  }, [users]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -169,7 +180,7 @@ export function AdminUsers() {
 
                     {/* Dropdown Menu */}
                     {openMenuId === user.id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                      <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
                         <button
                           onClick={() => handleViewProfile(user.id)}
                           className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition border-b border-gray-100"
