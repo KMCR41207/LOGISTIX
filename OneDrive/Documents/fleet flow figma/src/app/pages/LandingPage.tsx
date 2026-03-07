@@ -7,6 +7,7 @@ import BlurText from "../components/BlurText";
 export function LandingPage() {
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-white">
@@ -27,7 +28,6 @@ export function LandingPage() {
             </div>
             <nav className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-gray-700 hover:text-blue-600 transition">Features</a>
-              <a href="#pricing" className="text-gray-700 hover:text-blue-600 transition">Pricing</a>
               <a href="#about" className="text-gray-700 hover:text-blue-600 transition">About</a>
               <button 
                 onClick={() => navigate("/login")}
@@ -76,7 +76,10 @@ export function LandingPage() {
               >
                 Get Started Free
               </button>
-              <button className="px-8 py-4 border-2 border-white text-white rounded-lg font-semibold hover:bg-white/10 transition text-lg backdrop-blur-sm">
+              <button 
+                onClick={() => setIsVideoModalOpen(true)}
+                className="px-8 py-4 border-2 border-white text-white rounded-lg font-semibold hover:bg-white/10 transition text-lg backdrop-blur-sm"
+              >
                 Watch Demo
               </button>
             </div>
@@ -334,6 +337,36 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Video Modal */}
+      {isVideoModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm" 
+          onClick={() => setIsVideoModalOpen(false)}
+        >
+          <div className="relative w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
+            {/* Close Button */}
+            <button 
+              onClick={() => setIsVideoModalOpen(false)}
+              className="absolute -top-12 right-0 p-2 text-white hover:text-gray-300 transition"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            
+            {/* Video Player */}
+            <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
+              <video 
+                controls 
+                autoPlay
+                className="w-full h-auto"
+              >
+                <source src="/fleet-flow-video.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fleet Owner Detail Modal */}
       {selectedRole === 'fleet-owner' && (

@@ -1,6 +1,6 @@
 import { DashboardLayout } from "../components/DashboardLayout";
 import { Users, Search, MoreVertical, X, Eye, Ban, AlertCircle, Trash2, Edit } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export function AdminUsers() {
   const [users, setUsers] = useState(() => {
@@ -20,12 +20,42 @@ export function AdminUsers() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({
     userId: "",
     password: "",
-    role: "Driver",
+    role: "Fleet Owner",
     name: "",
   });
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Filter users based on search query
+  const filteredUsers = users.filter((user: any) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      user.id.toLowerCase().includes(query) ||
+      user.name.toLowerCase().includes(query) ||
+      user.role.toLowerCase().includes(query) ||
+      user.status.toLowerCase().includes(query)
+    );
+  });
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    if (openMenuId) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openMenuId]);
 
   // Save users to localStorage whenever they change
   useEffect(() => {
@@ -52,6 +82,7 @@ export function AdminUsers() {
       id: formData.userId,
       name: formData.name,
       role: formData.role,
+      password: formData.password,
       status: "active",
       joinDate: new Date().toISOString().split('T')[0],
     };
@@ -112,7 +143,7 @@ export function AdminUsers() {
 
   return (
     <DashboardLayout role="admin" userName="Admin">
-      <div className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto pr-4">
+      <div className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto pr-4 pb-64">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Users Management</h1>
@@ -126,6 +157,8 @@ export function AdminUsers() {
             <input 
               type="text"
               placeholder="Search users..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             />
           </div>
@@ -138,20 +171,21 @@ export function AdminUsers() {
         </div>
 
         {/* Users Table */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left py-4 px-6 font-semibold text-gray-700">User ID</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-700">Name</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-700">Role</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-700">Status</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-700">Join Date</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
+        <div className="bg-white rounded-xl border border-gray-200">
+          <div className="overflow-x-auto overflow-y-visible">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700">User ID</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700">Name</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700">Role</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700">Status</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700">Join Date</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+              {filteredUsers.map((user) => (
                 <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-4 px-6 font-semibold text-gray-900">{user.id}</td>
                   <td className="py-4 px-6 text-gray-700">{user.name}</td>
@@ -171,58 +205,68 @@ export function AdminUsers() {
                   </td>
                   <td className="py-4 px-6 text-gray-700">{user.joinDate}</td>
                   <td className="py-4 px-6 relative">
-                    <button 
-                      onClick={() => setOpenMenuId(openMenuId === user.id ? null : user.id)}
-                      className="p-2 hover:bg-gray-200 rounded-lg transition"
-                    >
-                      <MoreVertical className="w-5 h-5 text-gray-600" />
-                    </button>
+                    <div ref={openMenuId === user.id ? dropdownRef : null}>
+                      <button 
+                        onClick={() => setOpenMenuId(openMenuId === user.id ? null : user.id)}
+                        className="p-2 hover:bg-gray-200 rounded-lg transition"
+                      >
+                        <MoreVertical className="w-5 h-5 text-gray-600" />
+                      </button>
 
-                    {/* Dropdown Menu */}
-                    {openMenuId === user.id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
-                        <button
-                          onClick={() => handleViewProfile(user.id)}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition border-b border-gray-100"
-                        >
-                          <Eye className="w-5 h-5 text-blue-600" />
-                          <span>View Profile</span>
-                        </button>
-                        <button
-                          onClick={() => handleEditProfile(user)}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition border-b border-gray-100"
-                        >
-                          <Edit className="w-5 h-5 text-green-600" />
-                          <span>Edit Profile</span>
-                        </button>
-                        <button
-                          onClick={() => handleSuspendUser(user.id)}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition border-b border-gray-100"
-                        >
-                          <Ban className="w-5 h-5 text-orange-600" />
-                          <span>{user.status === "active" ? "Suspend" : "Reactivate"}</span>
-                        </button>
-                        <button
-                          onClick={() => handleWarnUser(user.id)}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition border-b border-gray-100"
-                        >
-                          <AlertCircle className="w-5 h-5 text-yellow-600" />
-                          <span>Issue Warning</span>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                          <span>Delete User</span>
-                        </button>
-                      </div>
-                    )}
+                      {/* Dropdown Menu */}
+                      {openMenuId === user.id && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                          <button
+                            onClick={() => handleViewProfile(user.id)}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition border-b border-gray-100"
+                          >
+                            <Eye className="w-5 h-5 text-blue-600" />
+                            <span>View Profile</span>
+                          </button>
+                          <button
+                            onClick={() => handleEditProfile(user)}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition border-b border-gray-100"
+                          >
+                            <Edit className="w-5 h-5 text-green-600" />
+                            <span>Edit Profile</span>
+                          </button>
+                          <button
+                            onClick={() => handleSuspendUser(user.id)}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition border-b border-gray-100"
+                          >
+                            <Ban className="w-5 h-5 text-orange-600" />
+                            <span>{user.status === "active" ? "Suspend" : "Reactivate"}</span>
+                          </button>
+                          <button
+                            onClick={() => handleWarnUser(user.id)}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition border-b border-gray-100"
+                          >
+                            <AlertCircle className="w-5 h-5 text-yellow-600" />
+                            <span>Issue Warning</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                            <span>Delete User</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-gray-500">
+                    No users found matching "{searchQuery}"
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
@@ -269,7 +313,7 @@ export function AdminUsers() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-1">Format: FO (Fleet Owner), DR (Driver), SH (Shipper), ADMIN</p>
+                  <p className="text-xs text-gray-500 mt-1">Format: FO (Fleet Owner), DR (Driver), SH (Shipper)</p>
                 </div>
 
                 {/* Password */}
@@ -295,7 +339,6 @@ export function AdminUsers() {
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   >
-                    <option value="Admin">Admin</option>
                     <option value="Fleet Owner">Fleet Owner</option>
                     <option value="Driver">Driver</option>
                     <option value="Shipper">Shipper</option>

@@ -11,37 +11,60 @@ export function LoginPage() {
 
   // Load users from localStorage on component mount
   useEffect(() => {
-    const savedUsers = localStorage.getItem('logistix_users');
-    if (savedUsers) {
-      const userList = JSON.parse(savedUsers);
-      const userMap: any = {};
-      
-      userList.forEach((user: any) => {
-        const roleMap: any = {
-          "Admin": "admin",
-          "Fleet Owner": "fleet-owner",
-          "Driver": "driver",
-          "Shipper": "shipper",
-        };
-        userMap[user.id] = { 
-          role: roleMap[user.role], 
-          password: "password123", // Default password for new users
-          name: user.name 
-        };
-      });
-      
+    // Default users - these should NEVER be overwritten
+    const defaultUsers = {
+      "ADMIN001": { role: "admin", password: "admin123", name: "Admin User" },
+      "FO001": { role: "fleet-owner", password: "fleet123", name: "Swift Logistics" },
+      "FO002": { role: "fleet-owner", password: "fleet123", name: "Fleet Owner 2" },
+      "DR001": { role: "driver", password: "driver123", name: "Michael Rodriguez" },
+      "DR002": { role: "driver", password: "driver123", name: "Driver 2" },
+      "SH001": { role: "shipper", password: "shipper123", name: "Global Shippers" },
+      "SH002": { role: "shipper", password: "shipper123", name: "Shipper 2" },
+    };
+
+    try {
+      const savedUsers = localStorage.getItem('logistix_users');
+      let userMap = { ...defaultUsers };
+
+      if (savedUsers) {
+        try {
+          const userList = JSON.parse(savedUsers);
+          const roleMap: any = {
+            "Admin": "admin",
+            "Fleet Owner": "fleet-owner",
+            "Driver": "driver",
+            "Shipper": "shipper",
+          };
+          
+          // Process all users from localStorage
+          userList.forEach((user: any) => {
+            // Skip default users - keep their original passwords
+            if (!defaultUsers[user.id as keyof typeof defaultUsers]) {
+              // Convert role format: "Fleet Owner" -> "fleet-owner"
+              let roleValue = user.role;
+              if (roleMap[user.role]) {
+                roleValue = roleMap[user.role];
+              } else if (typeof user.role === 'string') {
+                roleValue = user.role.toLowerCase().replace(/\s+/g, '-');
+              }
+              
+              userMap[user.id] = { 
+                role: roleValue, 
+                password: user.password, // Use the exact password stored
+                name: user.name 
+              };
+            }
+          });
+        } catch (e) {
+          console.error("Error parsing saved users, using defaults");
+          userMap = { ...defaultUsers };
+        }
+      }
+
       setUsers(userMap);
-    } else {
-      // Default users if no saved users
-      setUsers({
-        "ADMIN001": { role: "admin", password: "admin123", name: "Admin User" },
-        "FO001": { role: "fleet-owner", password: "fleet123", name: "Swift Logistics" },
-        "FO002": { role: "fleet-owner", password: "fleet123", name: "Fleet Owner 2" },
-        "DR001": { role: "driver", password: "driver123", name: "Michael Rodriguez" },
-        "DR002": { role: "driver", password: "driver123", name: "Driver 2" },
-        "SH001": { role: "shipper", password: "shipper123", name: "Global Shippers" },
-        "SH002": { role: "shipper", password: "shipper123", name: "Shipper 2" },
-      });
+    } catch (e) {
+      console.error("Error loading users:", e);
+      setUsers(defaultUsers);
     }
   }, []);
 
@@ -63,6 +86,10 @@ export function LoginPage() {
       setError(`Invalid User ID: ${normalizedUserId}`);
       return;
     }
+
+    // Debug log
+    console.log("User found:", normalizedUserId, "Password stored:", user.password, "Password entered:", password);
+    console.log("All users in system:", users);
 
     // Check password
     if (user.password !== password) {

@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { 
   Truck, 
@@ -12,6 +12,7 @@ import {
   Search,
   ChevronDown
 } from "lucide-react";
+import "./DashboardLayout.css";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -23,6 +24,24 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const navigation = {
     "fleet-owner": [
@@ -69,7 +88,7 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
               </div>
 
               {/* Dropdown Menu */}
-              <div className="ml-8 relative">
+              <div className="ml-8 relative" ref={menuRef}>
                 <button
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
@@ -80,67 +99,58 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
                 </button>
 
                 {/* Dropdown Content */}
-                {isMenuOpen && (
-                  <div className="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                    <nav className="p-2 space-y-1">
-                      {currentNav.map((item) => {
-                        const isActive = location.pathname === item.href;
-                        return (
-                          <button
-                            key={item.name}
-                            onClick={() => {
-                              navigate(item.href);
-                              setIsMenuOpen(false);
-                            }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
-                              isActive
-                                ? "bg-blue-50 text-blue-700 font-semibold"
-                                : "text-gray-700 hover:bg-gray-50"
-                            }`}
-                          >
-                            <item.icon className="w-5 h-5" />
-                            {item.name}
-                          </button>
-                        );
-                      })}
-                    </nav>
+                <div 
+                  className={`dropdown-menu ${isMenuOpen ? 'dropdown-menu-open' : 'dropdown-menu-closed'}`}
+                >
+                  <nav className="p-2 space-y-1">
+                    {currentNav.map((item) => {
+                      const isActive = location.pathname === item.href;
+                      return (
+                        <button
+                          key={item.name}
+                          onClick={() => {
+                            navigate(item.href);
+                            setIsMenuOpen(false);
+                          }}
+                          className={`menu-item w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+                            isActive
+                              ? "bg-blue-50 text-blue-700 font-semibold"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          <item.icon className="w-5 h-5" />
+                          {item.name}
+                        </button>
+                      );
+                    })}
+                  </nav>
 
-                    {/* Divider */}
-                    <div className="border-t border-gray-200"></div>
+                  {/* Divider */}
+                  <div className="border-t border-gray-200"></div>
 
-                    {/* Bottom Actions */}
-                    <div className="p-2 space-y-1">
-                      <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                        <Settings className="w-5 h-5" />
-                        Settings
-                      </button>
-                      <button 
-                        onClick={() => {
-                          navigate("/login");
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition"
-                      >
-                        <LogOut className="w-5 h-5" />
-                        Logout
-                      </button>
-                    </div>
+                  {/* Bottom Actions */}
+                  <div className="p-2 space-y-1">
+                    <button className="menu-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                      <Settings className="w-5 h-5" />
+                      Settings
+                    </button>
+                    <button 
+                      onClick={() => {
+                        navigate("/login");
+                        setIsMenuOpen(false);
+                      }}
+                      className="menu-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      Logout
+                    </button>
                   </div>
-                )}
+                </div>
               </div>
             </div>
 
             {/* Right Side */}
             <div className="flex items-center gap-4">
-              {/* Search */}
-              <div className="hidden md:block relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input 
-                  type="text"
-                  placeholder="Search..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-64 bg-gray-50"
-                />
-              </div>
 
               {/* Notifications */}
               <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">

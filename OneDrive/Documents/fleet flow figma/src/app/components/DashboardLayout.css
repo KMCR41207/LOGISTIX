@@ -1,0 +1,54 @@
+.dropdown-menu {
+  position: absolute;
+  left: 0;
+  margin-top: 0.5rem;
+  width: 14rem;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+  transform-origin: top center;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scaleY(0.8) translateY(-10px);
+  pointer-events: none;
+}
+
+.dropdown-menu-open {
+  max-height: 500px;
+  opacity: 1;
+  transform: scaleY(1) translateY(0);
+  pointer-events: auto;
+}
+
+.dropdown-menu-open .menu-item {
+  animation: slideInItem 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.dropdown-menu-open .menu-item:nth-child(1) { animation-delay: 0.05s; }
+.dropdown-menu-open .menu-item:nth-child(2) { animation-delay: 0.1s; }
+.dropdown-menu-open .menu-item:nth-child(3) { animation-delay: 0.15s; }
+.dropdown-menu-open .menu-item:nth-child(4) { animation-delay: 0.2s; }
+.dropdown-menu-open .menu-item:nth-child(5) { animation-delay: 0.25s; }
+.dropdown-menu-open .menu-item:nth-child(6) { animation-delay: 0.3s; }
+
+@keyframes slideInItem {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-menu-closed {
+  max-height: 0;
+  opacity: 0;
+  transform: scaleY(0.8) translateY(-10px);
+  pointer-events: none;
+}
