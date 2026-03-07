@@ -1,5 +1,5 @@
 import { DashboardLayout } from "../components/DashboardLayout";
-import { Users, Search, MoreVertical, X } from "lucide-react";
+import { Users, Search, MoreVertical, X, Eye, Ban, AlertCircle, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 export function AdminUsers() {
@@ -11,6 +11,7 @@ export function AdminUsers() {
   ]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     userId: "",
     password: "",
@@ -46,6 +47,34 @@ export function AdminUsers() {
     setFormData({ userId: "", password: "", role: "Driver", name: "" });
     setIsModalOpen(false);
     alert("User created successfully!");
+  };
+
+  const handleViewProfile = (userId: string) => {
+    alert(`Viewing profile for user: ${userId}`);
+    setOpenMenuId(null);
+  };
+
+  const handleSuspendUser = (userId: string) => {
+    setUsers(users.map(user => 
+      user.id === userId 
+        ? { ...user, status: user.status === "active" ? "suspended" : "active" }
+        : user
+    ));
+    alert(`User ${userId} has been ${users.find(u => u.id === userId)?.status === "active" ? "suspended" : "reactivated"}`);
+    setOpenMenuId(null);
+  };
+
+  const handleWarnUser = (userId: string) => {
+    alert(`Warning issued to user: ${userId}`);
+    setOpenMenuId(null);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    if (window.confirm(`Are you sure you want to delete user ${userId}? This action cannot be undone.`)) {
+      setUsers(users.filter(user => user.id !== userId));
+      alert(`User ${userId} has been deleted`);
+      setOpenMenuId(null);
+    }
   };
 
   return (
@@ -99,15 +128,56 @@ export function AdminUsers() {
                     </span>
                   </td>
                   <td className="py-4 px-6">
-                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      user.status === "active" 
+                        ? "bg-green-100 text-green-700" 
+                        : "bg-red-100 text-red-700"
+                    }`}>
                       {user.status}
                     </span>
                   </td>
                   <td className="py-4 px-6 text-gray-700">{user.joinDate}</td>
-                  <td className="py-4 px-6">
-                    <button className="p-2 hover:bg-gray-200 rounded-lg transition">
+                  <td className="py-4 px-6 relative">
+                    <button 
+                      onClick={() => setOpenMenuId(openMenuId === user.id ? null : user.id)}
+                      className="p-2 hover:bg-gray-200 rounded-lg transition"
+                    >
                       <MoreVertical className="w-5 h-5 text-gray-600" />
                     </button>
+
+                    {/* Dropdown Menu */}
+                    {openMenuId === user.id && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                        <button
+                          onClick={() => handleViewProfile(user.id)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition border-b border-gray-100"
+                        >
+                          <Eye className="w-5 h-5 text-blue-600" />
+                          <span>View Profile</span>
+                        </button>
+                        <button
+                          onClick={() => handleSuspendUser(user.id)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition border-b border-gray-100"
+                        >
+                          <Ban className="w-5 h-5 text-orange-600" />
+                          <span>{user.status === "active" ? "Suspend" : "Reactivate"}</span>
+                        </button>
+                        <button
+                          onClick={() => handleWarnUser(user.id)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition border-b border-gray-100"
+                        >
+                          <AlertCircle className="w-5 h-5 text-yellow-600" />
+                          <span>Issue Warning</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                          <span>Delete User</span>
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
