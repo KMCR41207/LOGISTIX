@@ -1,0 +1,278 @@
+import { useState, useEffect, useRef } from "react";
+import { X, Camera, User, Mail, Phone, MapPin, Calendar, Save } from "lucide-react";
+
+interface UserProfileModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  userId: string;
+  userName: string;
+  role: string;
+}
+
+export function UserProfileModal({ isOpen, onClose, userId, userName, role }: UserProfileModalProps) {
+  const [profileData, setProfileData] = useState({
+    name: userName,
+    email: "",
+    phone: "",
+    location: "",
+    bio: "",
+    profilePicture: ""
+  });
+  const [previewImage, setPreviewImage] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load profile data from localStorage
+  useEffect(() => {
+    if (isOpen) {
+      const stored = localStorage.getItem(`profile_${userId}`);
+      if (stored) {
+        const data = JSON.parse(stored);
+        setProfileData(data);
+        setPreviewImage(data.profilePicture || "");
+      } else {
+        // Set default values
+        setProfileData({
+          name: userName,
+          email: `${userId.toLowerCase()}@logistix.com`,
+          phone: "",
+          location: "",
+          bio: "",
+          profilePicture: ""
+        });
+      }
+    }
+  }, [isOpen, userId, userName]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setProfileData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setPreviewImage(result);
+        setProfileData(prev => ({
+          ...prev,
+          profilePicture: result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = () => {
+    // Save to localStorage
+    localStorage.setItem(`profile_${userId}`, JSON.stringify(profileData));
+    
+    // Update user name in users list if changed
+    if (profileData.name !== userName) {
+      const usersData = localStorage.getItem('logistix_users');
+      if (usersData) {
+        const users = JSON.parse(usersData);
+        const updatedUsers = users.map((user: any) => 
+          user.id === userId ? { ...user, name: profileData.name } : user
+        );
+        localStorage.setItem('logistix_users', JSON.stringify(updatedUsers));
+        
+        // Update session storage
+        sessionStorage.setItem('currentUserName', profileData.name);
+      }
+    }
+    
+    alert("Profile updated successfully!");
+    onClose();
+    // Reload page to reflect changes
+    window.location.reload();
+  };
+
+  const getRoleDisplay = () => {
+    const roleMap: any = {
+      "admin": "Administrator",
+      "fleet-owner": "Fleet Owner",
+      "driver": "Driver",
+      "shipper": "Shipper"
+    };
+    return roleMap[role] || role;
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">My Profile</h2>
+                <p className="text-blue-100 text-sm mt-1">Manage your account information</p>
+              </div>
+              <button 
+                onClick={onClose}
+                className="p-2 hover:bg-white/20 rounded-lg transition"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-6">
+            {/* Profile Picture */}
+            <div className="flex flex-col items-center">
+              <div className="relative">
+                <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
+                  {previewImage ? (
+                    <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    userName.charAt(0)
+                  )}
+                </div>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-0 right-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition shadow-lg"
+                >
+                  <Camera className="w-5 h-5" />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-3">Click the camera icon to upload a photo</p>
+            </div>
+
+            {/* User ID & Role (Read-only) */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="text-sm text-gray-600 mb-1">User ID</div>
+                <div className="font-semibold text-gray-900">{userId}</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="text-sm text-gray-600 mb-1">Role</div>
+                <div className="font-semibold text-gray-900">{getRoleDisplay()}</div>
+              </div>
+            </div>
+
+            {/* Editable Fields */}
+            <div className="space-y-4">
+              {/* Full Name */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <User className="w-4 h-4 inline mr-1" />
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={profileData.name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  placeholder="Enter your full name"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <Mail className="w-4 h-4 inline mr-1" />
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={profileData.email}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  placeholder="your.email@example.com"
+                />
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <Phone className="w-4 h-4 inline mr-1" />
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={profileData.phone}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  placeholder="+1 (555) 123-4567"
+                />
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <MapPin className="w-4 h-4 inline mr-1" />
+                  Location
+                </label>
+                <input
+                  type="text"
+                  name="location"
+                  value={profileData.location}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  placeholder="City, State"
+                />
+              </div>
+
+              {/* Bio */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Bio
+                </label>
+                <textarea
+                  name="bio"
+                  value={profileData.bio}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+                  placeholder="Tell us about yourself..."
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold flex items-center justify-center gap-2"
+              >
+                <Save className="w-5 h-5" />
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

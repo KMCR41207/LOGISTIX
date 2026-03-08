@@ -1,5 +1,5 @@
 import { DashboardLayout } from "../components/DashboardLayout";
-import { Users, Search, MoreVertical, X, Eye, Ban, AlertCircle, Trash2, Edit } from "lucide-react";
+import { Users, Search, MoreVertical, X, Eye, Ban, AlertCircle, Trash2, Edit, Truck, Package, CheckCircle } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 export function AdminUsers() {
@@ -16,8 +16,12 @@ export function AdminUsers() {
     ];
   });
 
+  const currentUserId = sessionStorage.getItem('currentUserId') || 'ADMIN001';
+  const currentUserName = sessionStorage.getItem('currentUserName') || 'Admin';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [viewingUser, setViewingUser] = useState<any>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -94,21 +98,63 @@ export function AdminUsers() {
   };
 
   const handleViewProfile = (userId: string) => {
-    alert(`Viewing profile for user: ${userId}`);
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setViewingUser(user);
+      setIsProfileModalOpen(true);
+    }
     setOpenMenuId(null);
   };
 
   const handleSuspendUser = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    const newStatus = user?.status === "active" ? "suspended" : "active";
+    
     setUsers(users.map(user => 
       user.id === userId 
-        ? { ...user, status: user.status === "active" ? "suspended" : "active" }
+        ? { ...user, status: newStatus }
         : user
     ));
-    alert(`User ${userId} has been ${users.find(u => u.id === userId)?.status === "active" ? "suspended" : "reactivated"}`);
+
+    // Send notification to user
+    const notification = {
+      id: Date.now().toString(),
+      type: newStatus === "suspended" ? "suspension" : "reactivation",
+      title: newStatus === "suspended" ? "Account Suspended" : "Account Reactivated",
+      message: newStatus === "suspended" 
+        ? "Your account has been suspended by the administrator. Please contact support for more information."
+        : "Your account has been reactivated. You can now access all platform features.",
+      from: "System Admin",
+      timestamp: new Date().toISOString(),
+      read: false
+    };
+
+    const userNotifications = localStorage.getItem(`notifications_${userId}`);
+    const notifications = userNotifications ? JSON.parse(userNotifications) : [];
+    notifications.unshift(notification);
+    localStorage.setItem(`notifications_${userId}`, JSON.stringify(notifications));
+
+    alert(`User ${userId} has been ${newStatus === "suspended" ? "suspended" : "reactivated"}`);
     setOpenMenuId(null);
   };
 
   const handleWarnUser = (userId: string) => {
+    // Send warning notification to user
+    const notification = {
+      id: Date.now().toString(),
+      type: "warning",
+      title: "Warning Issued",
+      message: "You have received a warning from the administrator. Please review your account activity and ensure compliance with platform policies.",
+      from: "System Admin",
+      timestamp: new Date().toISOString(),
+      read: false
+    };
+
+    const userNotifications = localStorage.getItem(`notifications_${userId}`);
+    const notifications = userNotifications ? JSON.parse(userNotifications) : [];
+    notifications.unshift(notification);
+    localStorage.setItem(`notifications_${userId}`, JSON.stringify(notifications));
+
     alert(`Warning issued to user: ${userId}`);
     setOpenMenuId(null);
   };
@@ -116,6 +162,10 @@ export function AdminUsers() {
   const handleDeleteUser = (userId: string) => {
     if (window.confirm(`Are you sure you want to delete user ${userId}? This action cannot be undone.`)) {
       setUsers(users.filter(user => user.id !== userId));
+      
+      // Clean up user's notifications
+      localStorage.removeItem(`notifications_${userId}`);
+      
       alert(`User ${userId} has been deleted`);
       setOpenMenuId(null);
     }
@@ -135,6 +185,23 @@ export function AdminUsers() {
           ? { ...user, name: editingUser.name, role: editingUser.role }
           : user
       ));
+
+      // Send notification to user about profile update
+      const notification = {
+        id: Date.now().toString(),
+        type: "system",
+        title: "Profile Updated",
+        message: `Your profile has been updated by the administrator. Name: ${editingUser.name}, Role: ${editingUser.role}`,
+        from: "System Admin",
+        timestamp: new Date().toISOString(),
+        read: false
+      };
+
+      const userNotifications = localStorage.getItem(`notifications_${editingUser.id}`);
+      const notifications = userNotifications ? JSON.parse(userNotifications) : [];
+      notifications.unshift(notification);
+      localStorage.setItem(`notifications_${editingUser.id}`, JSON.stringify(notifications));
+
       setIsEditModalOpen(false);
       setEditingUser(null);
       alert("User profile updated successfully!");
@@ -142,7 +209,7 @@ export function AdminUsers() {
   };
 
   return (
-    <DashboardLayout role="admin" userName="Admin">
+    <DashboardLayout role="admin" userName={currentUserName} userId={currentUserId}>
       <div className="space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto pr-4 pb-64">
         {/* Header */}
         <div>
@@ -440,6 +507,251 @@ export function AdminUsers() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Profile Modal */}
+      {isProfileModalOpen && viewingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            {/* Close Button */}
+            <button 
+              onClick={() => setIsProfileModalOpen(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition z-10"
+            >
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
+
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8 rounded-t-2xl">
+              <div className="flex items-center gap-6">
+                <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-4xl font-bold border-4 border-white/30">
+                  {viewingUser.name.charAt(0)}
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-3xl font-bold mb-2">{viewingUser.name}</h2>
+                  <div className="flex items-center gap-4 text-blue-100">
+                    <span className="font-semibold">{viewingUser.id}</span>
+                    <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-semibold">
+                      {viewingUser.role}
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      viewingUser.status === "active" 
+                        ? "bg-green-500 text-white" 
+                        : "bg-red-500 text-white"
+                    }`}>
+                      {viewingUser.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-8 space-y-6">
+              {/* Basic Information */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-600" />
+                  Basic Information
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="text-sm text-gray-600 mb-1">User ID</div>
+                    <div className="font-semibold text-gray-900">{viewingUser.id}</div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="text-sm text-gray-600 mb-1">Full Name</div>
+                    <div className="font-semibold text-gray-900">{viewingUser.name}</div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="text-sm text-gray-600 mb-1">Role</div>
+                    <div className="font-semibold text-gray-900">{viewingUser.role}</div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="text-sm text-gray-600 mb-1">Join Date</div>
+                    <div className="font-semibold text-gray-900">{viewingUser.joinDate}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Account Status */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-blue-600" />
+                  Account Status
+                </h3>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-gray-600 mb-1">Current Status</div>
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${
+                        viewingUser.status === "active" 
+                          ? "bg-green-100 text-green-700" 
+                          : "bg-red-100 text-red-700"
+                      }`}>
+                        {viewingUser.status === "active" ? (
+                          <CheckCircle className="w-4 h-4" />
+                        ) : (
+                          <Ban className="w-4 h-4" />
+                        )}
+                        {viewingUser.status.toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-600 mb-1">Member Since</div>
+                      <div className="font-semibold text-gray-900">
+                        {new Date(viewingUser.joinDate).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Role-Specific Information */}
+              {viewingUser.role === "Fleet Owner" && (
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-blue-600" />
+                    Fleet Information
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <div className="text-sm text-blue-600 mb-1">Total Trucks</div>
+                      <div className="text-2xl font-bold text-blue-700">
+                        {viewingUser.id === "FO001" ? "145" : viewingUser.id === "FO002" ? "128" : "0"}
+                      </div>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <div className="text-sm text-green-600 mb-1">Total Drivers</div>
+                      <div className="text-2xl font-bold text-green-700">
+                        {viewingUser.id === "FO001" ? "320" : viewingUser.id === "FO002" ? "280" : "0"}
+                      </div>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                      <div className="text-sm text-purple-600 mb-1">Revenue</div>
+                      <div className="text-2xl font-bold text-purple-700">
+                        {viewingUser.id === "FO001" ? "$2.45M" : viewingUser.id === "FO002" ? "$2.18M" : "$0"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {viewingUser.role === "Driver" && (
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-blue-600" />
+                    Driver Statistics
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <div className="text-sm text-blue-600 mb-1">Total Loads</div>
+                      <div className="text-2xl font-bold text-blue-700">
+                        {viewingUser.id === "DR001" ? "342" : "0"}
+                      </div>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <div className="text-sm text-green-600 mb-1">Completed</div>
+                      <div className="text-2xl font-bold text-green-700">
+                        {viewingUser.id === "DR001" ? "328" : "0"}
+                      </div>
+                    </div>
+                    <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                      <div className="text-sm text-orange-600 mb-1">Rating</div>
+                      <div className="text-2xl font-bold text-orange-700">
+                        {viewingUser.id === "DR001" ? "4.8" : "0"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {viewingUser.role === "Shipper" && (
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-blue-600" />
+                    Shipper Statistics
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <div className="text-sm text-blue-600 mb-1">Total Shipments</div>
+                      <div className="text-2xl font-bold text-blue-700">
+                        {viewingUser.id === "SH001" ? "156" : "0"}
+                      </div>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <div className="text-sm text-green-600 mb-1">Delivered</div>
+                      <div className="text-2xl font-bold text-green-700">
+                        {viewingUser.id === "SH001" ? "148" : "0"}
+                      </div>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                      <div className="text-sm text-purple-600 mb-1">Total Spent</div>
+                      <div className="text-2xl font-bold text-purple-700">
+                        {viewingUser.id === "SH001" ? "$1.2M" : "$0"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Actions */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      setIsProfileModalOpen(false);
+                      handleEditProfile(viewingUser);
+                    }}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
+                  >
+                    <Edit className="w-5 h-5" />
+                    Edit Profile
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsProfileModalOpen(false);
+                      handleSuspendUser(viewingUser.id);
+                    }}
+                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition font-semibold ${
+                      viewingUser.status === "active"
+                        ? "bg-orange-600 text-white hover:bg-orange-700"
+                        : "bg-green-600 text-white hover:bg-green-700"
+                    }`}
+                  >
+                    <Ban className="w-5 h-5" />
+                    {viewingUser.status === "active" ? "Suspend User" : "Reactivate User"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsProfileModalOpen(false);
+                      handleWarnUser(viewingUser.id);
+                    }}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-semibold"
+                  >
+                    <AlertCircle className="w-5 h-5" />
+                    Issue Warning
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsProfileModalOpen(false);
+                      handleDeleteUser(viewingUser.id);
+                    }}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    Delete User
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

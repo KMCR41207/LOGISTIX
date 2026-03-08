@@ -29,6 +29,8 @@ export function LoginPage() {
       if (savedUsers) {
         try {
           const userList = JSON.parse(savedUsers);
+          console.log("Loaded users from localStorage:", userList);
+          
           const roleMap: any = {
             "Admin": "admin",
             "Fleet Owner": "fleet-owner",
@@ -38,23 +40,23 @@ export function LoginPage() {
           
           // Process all users from localStorage
           userList.forEach((user: any) => {
-            // Skip default users - keep their original passwords
-            if (!defaultUsers[user.id as keyof typeof defaultUsers]) {
-              // Convert role format: "Fleet Owner" -> "fleet-owner"
-              let roleValue = user.role;
-              if (roleMap[user.role]) {
-                roleValue = roleMap[user.role];
-              } else if (typeof user.role === 'string') {
-                roleValue = user.role.toLowerCase().replace(/\s+/g, '-');
-              }
-              
-              userMap[user.id] = { 
-                role: roleValue, 
-                password: user.password, // Use the exact password stored
-                name: user.name 
-              };
+            // Convert role format: "Fleet Owner" -> "fleet-owner"
+            let roleValue = user.role;
+            if (roleMap[user.role]) {
+              roleValue = roleMap[user.role];
+            } else if (typeof user.role === 'string') {
+              roleValue = user.role.toLowerCase().replace(/\s+/g, '-');
             }
+            
+            // Add or update user in map (including defaults if they exist in localStorage)
+            userMap[user.id] = { 
+              role: roleValue, 
+              password: user.password, // Use the exact password stored
+              name: user.name 
+            };
           });
+          
+          console.log("Final user map:", userMap);
         } catch (e) {
           console.error("Error parsing saved users, using defaults");
           userMap = { ...defaultUsers };
@@ -78,24 +80,33 @@ export function LoginPage() {
       return;
     }
 
-    // Check if user ID exists (case-insensitive) - trim and clean input
-    const normalizedUserId = userId.trim().toUpperCase().replace(/^:/, "");
+    // Clean and normalize user ID - trim whitespace and convert to uppercase
+    const normalizedUserId = userId.trim().toUpperCase();
     const user = users[normalizedUserId as keyof typeof users];
     
     if (!user) {
-      setError(`Invalid User ID: ${normalizedUserId}`);
+      setError(`User ID "${normalizedUserId}" not found`);
+      console.log("Available user IDs:", Object.keys(users));
       return;
     }
 
     // Debug log
-    console.log("User found:", normalizedUserId, "Password stored:", user.password, "Password entered:", password);
-    console.log("All users in system:", users);
+    console.log("Login attempt:");
+    console.log("- User ID:", normalizedUserId);
+    console.log("- User found:", user);
+    console.log("- Password stored:", user.password);
+    console.log("- Password entered:", password);
+    console.log("- Passwords match:", user.password === password.trim());
 
-    // Check password
-    if (user.password !== password) {
+    // Check password - trim whitespace from entered password
+    if (user.password !== password.trim()) {
       setError("Invalid Password");
       return;
     }
+
+    // Store current user info for dashboard
+    sessionStorage.setItem('currentUserId', normalizedUserId);
+    sessionStorage.setItem('currentUserName', user.name);
 
     // Navigate based on role associated with the ID
     navigate(`/${user.role}`);
@@ -141,7 +152,7 @@ export function LoginPage() {
                 <input 
                   type="text"
                   value={userId}
-                  onChange={(e) => setUserId(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                  onChange={(e) => setUserId(e.target.value.toUpperCase())}
                   className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                   placeholder="Enter your User ID"
                   required

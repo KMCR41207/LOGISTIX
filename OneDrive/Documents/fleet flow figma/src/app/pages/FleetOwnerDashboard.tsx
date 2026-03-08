@@ -1,4 +1,5 @@
 import { DashboardLayout } from "../components/DashboardLayout";
+import { ChromaGrid } from "../components/ChromaGrid";
 import { 
   Truck, 
   Users, 
@@ -8,9 +9,11 @@ import {
   TrendingDown,
   MapPin,
   Clock,
-  AlertCircle
+  AlertCircle,
+  X
 } from "lucide-react";
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { useState } from "react";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const revenueData = [
   { month: "Jan", revenue: 145000, profit: 42000 },
@@ -43,8 +46,12 @@ const recentLoads = [
 ];
 
 export function FleetOwnerDashboard() {
+  const currentUserId = sessionStorage.getItem('currentUserId') || 'FO001';
+  const currentUserName = sessionStorage.getItem('currentUserName') || 'James Anderson';
+  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+
   return (
-    <DashboardLayout role="fleet-owner" userName="James Anderson">
+    <DashboardLayout role="fleet-owner" userName={currentUserName} userId={currentUserId}>
       <div className="space-y-6">
         {/* Page Header */}
         <div>
@@ -53,7 +60,7 @@ export function FleetOwnerDashboard() {
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <ChromaGrid radius={350} columns={4} damping={0.45} fadeOut={0.6}>
           <MetricCard 
             title="Total Trucks"
             value="53"
@@ -61,6 +68,7 @@ export function FleetOwnerDashboard() {
             trend="up"
             icon={<Truck className="w-6 h-6" />}
             color="blue"
+            onClick={() => setSelectedMetric("trucks")}
           />
           <MetricCard 
             title="Active Drivers"
@@ -69,6 +77,7 @@ export function FleetOwnerDashboard() {
             trend="up"
             icon={<Users className="w-6 h-6" />}
             color="green"
+            onClick={() => setSelectedMetric("drivers")}
           />
           <MetricCard 
             title="Monthly Revenue"
@@ -77,6 +86,7 @@ export function FleetOwnerDashboard() {
             trend="up"
             icon={<DollarSign className="w-6 h-6" />}
             color="purple"
+            onClick={() => setSelectedMetric("revenue")}
           />
           <MetricCard 
             title="Total Profit"
@@ -85,8 +95,9 @@ export function FleetOwnerDashboard() {
             trend="up"
             icon={<TrendingUp className="w-6 h-6" />}
             color="orange"
+            onClick={() => setSelectedMetric("profit")}
           />
-        </div>
+        </ChromaGrid>
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -234,6 +245,14 @@ export function FleetOwnerDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Metric Detail Modals */}
+      {selectedMetric && (
+        <MetricDetailModal 
+          metric={selectedMetric} 
+          onClose={() => setSelectedMetric(null)} 
+        />
+      )}
     </DashboardLayout>
   );
 }
@@ -245,31 +264,235 @@ interface MetricCardProps {
   trend: "up" | "down";
   icon: React.ReactNode;
   color: string;
+  onClick?: () => void;
 }
 
-function MetricCard({ title, value, change, trend, icon, color }: MetricCardProps) {
+function MetricCard({ title, value, change, trend, icon, color, onClick }: MetricCardProps) {
   const colorClasses = {
-    blue: "bg-blue-100 text-blue-600",
-    green: "bg-green-100 text-green-600",
-    purple: "bg-purple-100 text-purple-600",
-    orange: "bg-orange-100 text-orange-600",
+    blue: { bg: "bg-blue-100", text: "text-blue-600", spotlight: "rgba(59, 130, 246, 0.4)" },
+    green: { bg: "bg-green-100", text: "text-green-600", spotlight: "rgba(16, 185, 129, 0.4)" },
+    purple: { bg: "bg-purple-100", text: "text-purple-600", spotlight: "rgba(168, 85, 247, 0.4)" },
+    orange: { bg: "bg-orange-100", text: "text-orange-600", spotlight: "rgba(245, 158, 11, 0.4)" },
   }[color];
 
+  const handleCardMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    card.style.setProperty('--mouse-x', `${x}px`);
+    card.style.setProperty('--mouse-y', `${y}px`);
+  };
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition">
-      <div className="flex items-start justify-between mb-4">
-        <div className={`w-12 h-12 rounded-lg ${colorClasses} flex items-center justify-center`}>
-          {icon}
+    <div 
+      className="chroma-card"
+      onClick={onClick}
+      onMouseMove={handleCardMove}
+      style={{
+        '--spotlight-color': colorClasses.spotlight
+      } as React.CSSProperties}
+    >
+      <div className="chroma-card-content">
+        <div className="flex items-start justify-between mb-4">
+          <div className={`w-12 h-12 rounded-lg ${colorClasses.bg} ${colorClasses.text} flex items-center justify-center`}>
+            {icon}
+          </div>
+          {trend === "up" ? (
+            <TrendingUp className="w-5 h-5 text-green-500" />
+          ) : (
+            <TrendingDown className="w-5 h-5 text-red-500" />
+          )}
         </div>
-        {trend === "up" ? (
-          <TrendingUp className="w-5 h-5 text-green-500" />
-        ) : (
-          <TrendingDown className="w-5 h-5 text-red-500" />
-        )}
+        <div className="text-2xl font-bold text-gray-900 mb-1">{value}</div>
+        <div className="text-sm text-gray-600 mb-2">{title}</div>
+        <div className="text-xs text-gray-500">{change}</div>
       </div>
-      <div className="text-2xl font-bold text-gray-900 mb-1">{value}</div>
-      <div className="text-sm text-gray-600 mb-2">{title}</div>
-      <div className="text-xs text-gray-500">{change}</div>
+    </div>
+  );
+}
+
+interface MetricDetailModalProps {
+  metric: string;
+  onClose: () => void;
+}
+
+function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
+  const detailData = {
+    trucks: {
+      title: "Total Trucks",
+      icon: <Truck className="w-8 h-8" />,
+      color: "blue",
+      current: "53",
+      breakdown: [
+        { label: "Active on Road", value: "42", percentage: "79.2%", change: "+5" },
+        { label: "Idle/Available", value: "8", percentage: "15.1%", change: "-1" },
+        { label: "In Maintenance", value: "3", percentage: "5.7%", change: "-1" },
+      ],
+      monthlyData: [
+        { month: "Jan", value: 45 },
+        { month: "Feb", value: 47 },
+        { month: "Mar", value: 48 },
+        { month: "Apr", value: 49 },
+        { month: "May", value: 50 },
+        { month: "Jun", value: 53 },
+      ]
+    },
+    drivers: {
+      title: "Active Drivers",
+      icon: <Users className="w-8 h-8" />,
+      color: "green",
+      current: "48",
+      breakdown: [
+        { label: "On Road Now", value: "42", percentage: "87.5%", change: "+8" },
+        { label: "Available", value: "4", percentage: "8.3%", change: "-2" },
+        { label: "Off Duty", value: "2", percentage: "4.2%", change: "-1" },
+      ],
+      monthlyData: [
+        { month: "Jan", value: 38 },
+        { month: "Feb", value: 40 },
+        { month: "Mar", value: 42 },
+        { month: "Apr", value: 44 },
+        { month: "May", value: 46 },
+        { month: "Jun", value: 48 },
+      ]
+    },
+    revenue: {
+      title: "Monthly Revenue",
+      icon: <DollarSign className="w-8 h-8" />,
+      color: "purple",
+      current: "$234,500",
+      breakdown: [
+        { label: "Long Haul", value: "$145,000", percentage: "61.8%", change: "+$18,000" },
+        { label: "Regional", value: "$62,500", percentage: "26.7%", change: "+$8,500" },
+        { label: "Local Delivery", value: "$27,000", percentage: "11.5%", change: "+$3,200" },
+      ],
+      monthlyData: [
+        { month: "Jan", value: 145000 },
+        { month: "Feb", value: 162000 },
+        { month: "Mar", value: 178000 },
+        { month: "Apr", value: 195000 },
+        { month: "May", value: 210000 },
+        { month: "Jun", value: 234500 },
+      ]
+    },
+    profit: {
+      title: "Total Profit",
+      icon: <TrendingUp className="w-8 h-8" />,
+      color: "orange",
+      current: "$76,200",
+      breakdown: [
+        { label: "Operating Profit", value: "$58,400", percentage: "76.6%", change: "+$9,200" },
+        { label: "Fuel Savings", value: "$12,800", percentage: "16.8%", change: "+$2,100" },
+        { label: "Other Income", value: "$5,000", percentage: "6.6%", change: "+$800" },
+      ],
+      monthlyData: [
+        { month: "Jan", value: 42000 },
+        { month: "Feb", value: 48000 },
+        { month: "Mar", value: 55000 },
+        { month: "Apr", value: 61000 },
+        { month: "May", value: 68000 },
+        { month: "Jun", value: 76200 },
+      ]
+    }
+  };
+
+  const data = detailData[metric as keyof typeof detailData];
+  
+  const colorClasses = {
+    blue: { bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-200" },
+    green: { bg: "bg-green-100", text: "text-green-600", border: "border-green-200" },
+    purple: { bg: "bg-purple-100", text: "text-purple-600", border: "border-purple-200" },
+    orange: { bg: "bg-orange-100", text: "text-orange-600", border: "border-orange-200" },
+  }[data.color];
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className={`${colorClasses.bg} ${colorClasses.border} border-b p-6 flex items-center justify-between`}>
+          <div className="flex items-center gap-4">
+            <div className={`w-16 h-16 ${colorClasses.bg} ${colorClasses.text} rounded-xl flex items-center justify-center border-2 ${colorClasses.border}`}>
+              {data.icon}
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">{data.title}</h2>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{data.current}</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose}
+            className="w-10 h-10 rounded-lg hover:bg-white/50 flex items-center justify-center transition"
+          >
+            <X className="w-6 h-6 text-gray-600" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Breakdown */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Breakdown</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {data.breakdown.map((item) => (
+                <div key={item.label} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="text-sm text-gray-600 mb-1">{item.label}</div>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">{item.value}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500">{item.percentage}</span>
+                    <span className={`text-xs font-semibold ${item.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
+                      {item.change}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Chart */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">6-Month Trend</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={data.monthlyData}>
+                <defs>
+                  <linearGradient id={`color${metric}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={
+                      data.color === 'blue' ? '#3b82f6' :
+                      data.color === 'green' ? '#10b981' :
+                      data.color === 'purple' ? '#a855f7' :
+                      '#f59e0b'
+                    } stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={
+                      data.color === 'blue' ? '#3b82f6' :
+                      data.color === 'green' ? '#10b981' :
+                      data.color === 'purple' ? '#a855f7' :
+                      '#f59e0b'
+                    } stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="month" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke={
+                    data.color === 'blue' ? '#3b82f6' :
+                    data.color === 'green' ? '#10b981' :
+                    data.color === 'purple' ? '#a855f7' :
+                    '#f59e0b'
+                  }
+                  strokeWidth={2} 
+                  fill={`url(#color${metric})`} 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

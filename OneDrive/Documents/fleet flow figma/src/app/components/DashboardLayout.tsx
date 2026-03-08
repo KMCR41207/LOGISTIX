@@ -13,17 +13,23 @@ import {
   ChevronDown
 } from "lucide-react";
 import "./DashboardLayout.css";
+import { NotificationPanel } from "./NotificationPanel";
+import { UserProfileModal } from "./UserProfileModal";
 
 interface DashboardLayoutProps {
   children: ReactNode;
   role: "fleet-owner" | "driver" | "shipper" | "admin";
   userName: string;
+  userId?: string;
 }
 
-export function DashboardLayout({ children, role, userName }: DashboardLayoutProps) {
+export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -42,6 +48,25 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isMenuOpen]);
+
+  // Load unread notification count
+  useEffect(() => {
+    const loadUnreadCount = () => {
+      const stored = localStorage.getItem(`notifications_${userId}`);
+      if (stored) {
+        const notifications = JSON.parse(stored);
+        const unread = notifications.filter((n: any) => !n.read).length;
+        setUnreadCount(unread);
+      }
+    };
+
+    loadUnreadCount();
+    
+    // Poll for new notifications every 5 seconds
+    const interval = setInterval(loadUnreadCount, 5000);
+    
+    return () => clearInterval(interval);
+  }, [userId, isNotificationOpen]);
 
   const navigation = {
     "fleet-owner": [
@@ -153,9 +178,14 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
             <div className="flex items-center gap-4">
 
               {/* Notifications */}
-              <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
+              <button 
+                onClick={() => setIsNotificationOpen(true)}
+                className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+              >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                )}
               </button>
 
               {/* User Menu */}
@@ -164,9 +194,12 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
                   <div className="text-sm font-semibold text-gray-900">{userName}</div>
                   <div className="text-xs text-gray-500 capitalize">{role.replace("-", " ")}</div>
                 </div>
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white font-semibold shadow-lg shadow-blue-600/20">
+                <button
+                  onClick={() => setIsProfileOpen(true)}
+                  className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white font-semibold shadow-lg shadow-blue-600/20 hover:shadow-xl hover:scale-105 transition-all cursor-pointer"
+                >
                   {userName.charAt(0)}
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -179,6 +212,24 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
           {children}
         </main>
       </div>
+
+      {/* Notification Panel */}
+      <NotificationPanel
+        isOpen={isNotificationOpen}
+        onClose={() => setIsNotificationOpen(false)}
+        userId={userId}
+        userName={userName}
+        role={role}
+      />
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        userId={userId}
+        userName={userName}
+        role={role}
+      />
     </div>
   );
 }
