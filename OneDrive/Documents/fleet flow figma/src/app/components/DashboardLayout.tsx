@@ -73,26 +73,40 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
   // Load profile picture
   useEffect(() => {
     const loadProfilePicture = () => {
+      console.log('=== LOADING PROFILE PICTURE ===');
+      console.log('User ID:', userId);
+      
       const stored = localStorage.getItem(`profile_${userId}`);
-      console.log('Loading profile for userId:', userId);
-      console.log('Stored profile data:', stored);
+      console.log('Raw stored data exists:', !!stored);
       
       if (stored) {
-        const profileData = JSON.parse(stored);
-        console.log('Profile picture from storage:', profileData.profilePicture ? 'exists' : 'missing');
-        
-        if (profileData.profilePicture) {
-          setProfilePicture(profileData.profilePicture);
-        } else {
+        try {
+          const profileData = JSON.parse(stored);
+          console.log('Parsed profile data:', {
+            name: profileData.name,
+            hasPicture: !!profileData.profilePicture,
+            pictureLength: profileData.profilePicture?.length || 0
+          });
+          
+          if (profileData.profilePicture) {
+            setProfilePicture(profileData.profilePicture);
+            console.log('✓ Profile picture loaded and set');
+          } else {
+            setProfilePicture("");
+            console.log('✗ No profile picture in stored data');
+          }
+          
+          // Update userName if it changed
+          if (profileData.name && profileData.name !== currentUserName) {
+            setCurrentUserName(profileData.name);
+            console.log('✓ Updated userName to:', profileData.name);
+          }
+        } catch (error) {
+          console.error('✗ Error parsing profile data:', error);
           setProfilePicture("");
         }
-        
-        // Update userName if it changed
-        if (profileData.name && profileData.name !== currentUserName) {
-          setCurrentUserName(profileData.name);
-        }
       } else {
-        console.log('No profile data found in localStorage');
+        console.log('✗ No profile data found in localStorage for key:', `profile_${userId}`);
         setProfilePicture("");
       }
     };
@@ -101,6 +115,7 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
     
     // Reload profile picture when profile modal closes
     if (!isProfileOpen) {
+      console.log('Profile modal closed, reloading picture...');
       loadProfilePicture();
     }
   }, [userId, isProfileOpen, currentUserName]);

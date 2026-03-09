@@ -57,50 +57,89 @@ export function UserProfileModal({ isOpen, onClose, userId, userName, role, onPr
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Check file size (limit to 1MB)
+      if (file.size > 1024 * 1024) {
+        alert("Image size should be less than 1MB. Please choose a smaller image.");
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
+        console.log('Image loaded, size:', result.length, 'characters');
         setPreviewImage(result);
         setProfileData(prev => ({
           ...prev,
           profilePicture: result
         }));
       };
+      reader.onerror = () => {
+        console.error('Error reading file');
+        alert("Error reading image file. Please try again.");
+      };
       reader.readAsDataURL(file);
     }
   };
 
   const handleSave = () => {
-    console.log('Saving profile data:', profileData);
+    console.log('=== SAVING PROFILE ===');
+    console.log('User ID:', userId);
+    console.log('Profile data:', {
+      name: profileData.name,
+      email: profileData.email,
+      phone: profileData.phone,
+      location: profileData.location,
+      bio: profileData.bio,
+      hasPicture: !!profileData.profilePicture,
+      pictureLength: profileData.profilePicture?.length || 0
+    });
     
-    // Save to localStorage
-    localStorage.setItem(`profile_${userId}`, JSON.stringify(profileData));
-    console.log('Profile saved to localStorage with key:', `profile_${userId}`);
-    
-    // Update user name in users list if changed
-    if (profileData.name !== userName) {
-      const usersData = localStorage.getItem('logistix_users');
-      if (usersData) {
-        const users = JSON.parse(usersData);
-        const updatedUsers = users.map((user: any) => 
-          user.id === userId ? { ...user, name: profileData.name } : user
-        );
-        localStorage.setItem('logistix_users', JSON.stringify(updatedUsers));
-        
-        // Update session storage
-        sessionStorage.setItem('currentUserName', profileData.name);
-        console.log('Updated userName in session storage');
+    try {
+      // Save to localStorage
+      const dataToSave = JSON.stringify(profileData);
+      console.log('Data size to save:', dataToSave.length, 'characters');
+      
+      localStorage.setItem(`profile_${userId}`, dataToSave);
+      console.log('✓ Profile saved to localStorage with key:', `profile_${userId}`);
+      
+      // Verify it was saved
+      const verification = localStorage.getItem(`profile_${userId}`);
+      if (verification) {
+        const parsed = JSON.parse(verification);
+        console.log('✓ Verification: Profile picture exists in storage:', !!parsed.profilePicture);
+      } else {
+        console.error('✗ Verification failed: Could not read back from localStorage');
       }
+      
+      // Update user name in users list if changed
+      if (profileData.name !== userName) {
+        const usersData = localStorage.getItem('logistix_users');
+        if (usersData) {
+          const users = JSON.parse(usersData);
+          const updatedUsers = users.map((user: any) => 
+            user.id === userId ? { ...user, name: profileData.name } : user
+          );
+          localStorage.setItem('logistix_users', JSON.stringify(updatedUsers));
+          
+          // Update session storage
+          sessionStorage.setItem('currentUserName', profileData.name);
+          console.log('✓ Updated userName in session storage');
+        }
+      }
+      
+      alert("Profile updated successfully!");
+      
+      // Trigger profile update callback
+      if (onProfileUpdate) {
+        console.log('Calling onProfileUpdate callback');
+        onProfileUpdate();
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error('✗ Error saving profile:', error);
+      alert("Error saving profile. The image might be too large. Please try a smaller image.");
     }
-    
-    alert("Profile updated successfully!");
-    
-    // Trigger profile update callback
-    if (onProfileUpdate) {
-      onProfileUpdate();
-    }
-    
-    onClose();
   };
 
   const getRoleDisplay = () => {
