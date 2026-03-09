@@ -30,6 +30,7 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [profilePicture, setProfilePicture] = useState<string>("");
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -67,6 +68,26 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
     
     return () => clearInterval(interval);
   }, [userId, isNotificationOpen]);
+
+  // Load profile picture
+  useEffect(() => {
+    const loadProfilePicture = () => {
+      const stored = localStorage.getItem(`profile_${userId}`);
+      if (stored) {
+        const profileData = JSON.parse(stored);
+        if (profileData.profilePicture) {
+          setProfilePicture(profileData.profilePicture);
+        }
+      }
+    };
+
+    loadProfilePicture();
+    
+    // Reload profile picture when profile modal closes
+    if (!isProfileOpen) {
+      loadProfilePicture();
+    }
+  }, [userId, isProfileOpen]);
 
   const navigation = {
     "fleet-owner": [
@@ -196,9 +217,17 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
                 </div>
                 <button
                   onClick={() => setIsProfileOpen(true)}
-                  className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white font-semibold shadow-lg shadow-blue-600/20 hover:shadow-xl hover:scale-105 transition-all cursor-pointer"
+                  className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white font-semibold shadow-lg shadow-blue-600/20 hover:shadow-xl hover:scale-105 transition-all cursor-pointer overflow-hidden"
                 >
-                  {userName.charAt(0)}
+                  {profilePicture ? (
+                    <img 
+                      src={profilePicture} 
+                      alt={userName} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    userName.charAt(0)
+                  )}
                 </button>
               </div>
             </div>
@@ -229,6 +258,16 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
         userId={userId}
         userName={userName}
         role={role}
+        onProfileUpdate={() => {
+          // Reload profile picture after update
+          const stored = localStorage.getItem(`profile_${userId}`);
+          if (stored) {
+            const profileData = JSON.parse(stored);
+            if (profileData.profilePicture) {
+              setProfilePicture(profileData.profilePicture);
+            }
+          }
+        }}
       />
     </div>
   );

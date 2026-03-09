@@ -7,9 +7,10 @@ interface UserProfileModalProps {
   userId: string;
   userName: string;
   role: string;
+  onProfileUpdate?: () => void;
 }
 
-export function UserProfileModal({ isOpen, onClose, userId, userName, role }: UserProfileModalProps) {
+export function UserProfileModal({ isOpen, onClose, userId, userName, role, onProfileUpdate }: UserProfileModalProps) {
   const [profileData, setProfileData] = useState({
     name: userName,
     email: "",
@@ -87,9 +88,13 @@ export function UserProfileModal({ isOpen, onClose, userId, userName, role }: Us
     }
     
     alert("Profile updated successfully!");
+    
+    // Trigger profile update callback
+    if (onProfileUpdate) {
+      onProfileUpdate();
+    }
+    
     onClose();
-    // Reload page to reflect changes
-    window.location.reload();
   };
 
   const getRoleDisplay = () => {
