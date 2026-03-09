@@ -66,12 +66,47 @@ export function UserProfileModal({ isOpen, onClose, userId, userName, role, onPr
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
-        console.log('Image loaded, size:', result.length, 'characters');
-        setPreviewImage(result);
-        setProfileData(prev => ({
-          ...prev,
-          profilePicture: result
-        }));
+        console.log('Image loaded, original size:', result.length, 'characters');
+        
+        // Compress image by resizing
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Resize to max 200x200 for profile picture
+          const maxSize = 200;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height) {
+            if (width > maxSize) {
+              height *= maxSize / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width *= maxSize / height;
+              height = maxSize;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Convert to base64 with reduced quality
+          const compressedImage = canvas.toDataURL('image/jpeg', 0.7);
+          console.log('Image compressed, new size:', compressedImage.length, 'characters');
+          console.log('Compression ratio:', ((1 - compressedImage.length / result.length) * 100).toFixed(1) + '%');
+          
+          setPreviewImage(compressedImage);
+          setProfileData(prev => ({
+            ...prev,
+            profilePicture: compressedImage
+          }));
+        };
+        img.src = result;
       };
       reader.onerror = () => {
         console.error('Error reading file');
@@ -95,9 +130,28 @@ export function UserProfileModal({ isOpen, onClose, userId, userName, role, onPr
     });
     
     try {
+      // Test localStorage availability
+      const testKey = 'test_storage';
+      try {
+        localStorage.setItem(testKey, 'test');
+        localStorage.removeItem(testKey);
+        console.log('✓ localStorage is available');
+      } catch (e) {
+        console.error('✗ localStorage is NOT available or is full:', e);
+        alert("Cannot save profile: Browser storage is full or disabled. Please enable cookies/storage in your browser settings.");
+        return;
+      }
+      
       // Save to localStorage
       const dataToSave = JSON.stringify(profileData);
-      console.log('Data size to save:', dataToSave.length, 'characters');
+      console.log('Data size to save:', dataToSave.length, 'characters', '≈', (dataToSave.length / 1024).toFixed(2), 'KB');
+      
+      // Check if data is too large (localStorage typically has 5-10MB limit)
+      if (dataToSave.length > 5 * 1024 * 1024) {
+        console.error('✗ Data too large for localStorage');
+        alert("Profile data is too large. Please use a smaller profile picture.");
+        return;
+      }
       
       localStorage.setItem(`profile_${userId}`, dataToSave);
       console.log('✓ Profile saved to localStorage with key:', `profile_${userId}`);
@@ -106,9 +160,14 @@ export function UserProfileModal({ isOpen, onClose, userId, userName, role, onPr
       const verification = localStorage.getItem(`profile_${userId}`);
       if (verification) {
         const parsed = JSON.parse(verification);
-        console.log('✓ Verification: Profile picture exists in storage:', !!parsed.profilePicture);
+        console.log('✓ Verification SUCCESS: Profile picture exists in storage:', !!parsed.profilePicture);
+        if (parsed.profilePicture) {
+          console.log('✓ Picture size in storage:', parsed.profilePicture.length, 'characters');
+        }
       } else {
-        console.error('✗ Verification failed: Could not read back from localStorage');
+        console.error('✗ Verification FAILED: Could not read back from localStorage');
+        alert("Error: Profile was not saved correctly. Please try again.");
+        return;
       }
       
       // Update user name in users list if changed
@@ -138,7 +197,7 @@ export function UserProfileModal({ isOpen, onClose, userId, userName, role, onPr
       onClose();
     } catch (error) {
       console.error('✗ Error saving profile:', error);
-      alert("Error saving profile. The image might be too large. Please try a smaller image.");
+      alert("Error saving profile: " + (error as Error).message);
     }
   };
 
