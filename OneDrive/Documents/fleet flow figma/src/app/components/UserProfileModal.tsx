@@ -31,15 +31,17 @@ export function UserProfileModal({ isOpen, onClose, userId, userName, role, onPr
         setProfileData(data);
         setPreviewImage(data.profilePicture || "");
       } else {
-        // Set default values
+        // Set default values - preserve any existing data
+        const currentName = sessionStorage.getItem('currentUserName') || userName;
         setProfileData({
-          name: userName,
+          name: currentName,
           email: `${userId.toLowerCase()}@logistix.com`,
           phone: "",
           location: "",
           bio: "",
           profilePicture: ""
         });
+        setPreviewImage("");
       }
     }
   }, [isOpen, userId, userName]);
@@ -69,8 +71,11 @@ export function UserProfileModal({ isOpen, onClose, userId, userName, role, onPr
   };
 
   const handleSave = () => {
+    console.log('Saving profile data:', profileData);
+    
     // Save to localStorage
     localStorage.setItem(`profile_${userId}`, JSON.stringify(profileData));
+    console.log('Profile saved to localStorage with key:', `profile_${userId}`);
     
     // Update user name in users list if changed
     if (profileData.name !== userName) {
@@ -84,6 +89,7 @@ export function UserProfileModal({ isOpen, onClose, userId, userName, role, onPr
         
         // Update session storage
         sessionStorage.setItem('currentUserName', profileData.name);
+        console.log('Updated userName in session storage');
       }
     }
     

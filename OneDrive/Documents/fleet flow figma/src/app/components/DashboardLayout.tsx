@@ -31,6 +31,7 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [profilePicture, setProfilePicture] = useState<string>("");
+  const [currentUserName, setCurrentUserName] = useState(userName);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -73,11 +74,26 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
   useEffect(() => {
     const loadProfilePicture = () => {
       const stored = localStorage.getItem(`profile_${userId}`);
+      console.log('Loading profile for userId:', userId);
+      console.log('Stored profile data:', stored);
+      
       if (stored) {
         const profileData = JSON.parse(stored);
+        console.log('Profile picture from storage:', profileData.profilePicture ? 'exists' : 'missing');
+        
         if (profileData.profilePicture) {
           setProfilePicture(profileData.profilePicture);
+        } else {
+          setProfilePicture("");
         }
+        
+        // Update userName if it changed
+        if (profileData.name && profileData.name !== currentUserName) {
+          setCurrentUserName(profileData.name);
+        }
+      } else {
+        console.log('No profile data found in localStorage');
+        setProfilePicture("");
       }
     };
 
@@ -87,7 +103,7 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
     if (!isProfileOpen) {
       loadProfilePicture();
     }
-  }, [userId, isProfileOpen]);
+  }, [userId, isProfileOpen, currentUserName]);
 
   const navigation = {
     "fleet-owner": [
@@ -212,7 +228,7 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
               {/* User Menu */}
               <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
                 <div className="text-right hidden sm:block">
-                  <div className="text-sm font-semibold text-gray-900">{userName}</div>
+                  <div className="text-sm font-semibold text-gray-900">{currentUserName}</div>
                   <div className="text-xs text-gray-500 capitalize">{role.replace("-", " ")}</div>
                 </div>
                 <button
@@ -222,11 +238,11 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
                   {profilePicture ? (
                     <img 
                       src={profilePicture} 
-                      alt={userName} 
+                      alt={currentUserName} 
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    userName.charAt(0)
+                    currentUserName.charAt(0)
                   )}
                 </button>
               </div>
@@ -256,15 +272,24 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
         userId={userId}
-        userName={userName}
+        userName={currentUserName}
         role={role}
         onProfileUpdate={() => {
-          // Reload profile picture after update
+          console.log('Profile updated, reloading data...');
+          // Reload profile picture and name after update
           const stored = localStorage.getItem(`profile_${userId}`);
           if (stored) {
             const profileData = JSON.parse(stored);
+            console.log('Updated profile data:', profileData);
+            
             if (profileData.profilePicture) {
               setProfilePicture(profileData.profilePicture);
+              console.log('Profile picture updated');
+            }
+            
+            if (profileData.name) {
+              setCurrentUserName(profileData.name);
+              console.log('User name updated to:', profileData.name);
             }
           }
         }}
