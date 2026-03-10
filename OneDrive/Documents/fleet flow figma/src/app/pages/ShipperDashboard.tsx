@@ -1,4 +1,5 @@
 import { DashboardLayout } from "../components/DashboardLayout";
+import { ChromaGrid } from "../components/ChromaGrid";
 import { 
   Package, 
   Truck, 
@@ -8,8 +9,13 @@ import {
   DollarSign,
   TrendingUp,
   Plus,
-  Filter
+  Filter,
+  X,
+  TrendingDown
 } from "lucide-react";
+import { useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const activeShipments = [
   { 
@@ -73,65 +79,133 @@ const completedShipments = [
 ];
 
 export function ShipperDashboard() {
+  const navigate = useNavigate();
+  const currentUserId = sessionStorage.getItem('currentUserId') || 'SH001';
+  const currentUserName = sessionStorage.getItem('currentUserName') || 'Jennifer Chen';
+  const [userStatus, setUserStatus] = useState('active');
+  const [postedLoads, setPostedLoads] = useState<any[]>([]);
+  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+
+  // Check user status and load posted loads
+  useEffect(() => {
+    // Check if user is suspended
+    const usersData = localStorage.getItem('logistix_users');
+    if (usersData) {
+      const users = JSON.parse(usersData);
+      const currentUser = users.find((user: any) => user.id === currentUserId);
+      if (currentUser) {
+        setUserStatus(currentUser.status || 'active');
+      }
+    }
+
+    // Load posted loads
+    const loadsData = localStorage.getItem('posted_loads');
+    if (loadsData) {
+      const loads = JSON.parse(loadsData);
+      const userLoads = loads.filter((load: any) => load.shipperId === currentUserId);
+      setPostedLoads(userLoads);
+    }
+  }, [currentUserId]);
+
+  const handlePostNewLoad = () => {
+    if (userStatus === 'suspended') {
+      alert('Your account has been suspended. You cannot post new loads. Please contact support.');
+      return;
+    }
+    navigate('/shipper/post');
+  };
+
+  // Filter loads based on user status
+  const visiblePendingLoads = userStatus === 'suspended' ? [] : pendingLoads;
+  const visibleActiveShipments = userStatus === 'suspended' ? [] : activeShipments;
+
   return (
-    <DashboardLayout role="shipper" userName="Jennifer Chen">
+    <DashboardLayout role="shipper" userName={currentUserName} userId={currentUserId}>
       <div className="space-y-6">
+        {/* Suspension Notice */}
+        {userStatus === 'suspended' && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs font-bold">!</span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-red-800">Account Suspended</h3>
+                <p className="text-red-700 text-sm">Your account has been suspended. You cannot view or post loads. Please contact support for assistance.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Shipper Dashboard</h1>
             <p className="text-gray-600 mt-1">Manage your shipments and track deliveries</p>
           </div>
-          <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2 shadow-lg shadow-blue-600/30">
+          <button 
+            onClick={handlePostNewLoad}
+            disabled={userStatus === 'suspended'}
+            className={`px-6 py-3 rounded-lg font-semibold transition flex items-center gap-2 shadow-lg ${
+              userStatus === 'suspended' 
+                ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/30'
+            }`}
+          >
             <Plus className="w-5 h-5" />
             Post New Load
           </button>
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <ChromaGrid radius={350} columns={4} damping={0.45} fadeOut={0.6}>
           <MetricCard 
             title="Active Shipments"
-            value="2"
-            subtitle="Both on schedule"
+            value={userStatus === 'suspended' ? '0' : '2'}
+            subtitle={userStatus === 'suspended' ? 'Account suspended' : 'Both on schedule'}
             icon={<Truck className="w-6 h-6" />}
             color="blue"
+            onClick={() => setSelectedMetric("shipments")}
           />
           <MetricCard 
             title="Pending Loads"
-            value="2"
-            subtitle="Awaiting assignment"
+            value={userStatus === 'suspended' ? '0' : postedLoads.filter(load => load.status === 'pending').length.toString()}
+            subtitle={userStatus === 'suspended' ? 'Account suspended' : 'Awaiting assignment'}
             icon={<Clock className="w-6 h-6" />}
             color="orange"
+            onClick={() => setSelectedMetric("pending")}
           />
           <MetricCard 
             title="This Month"
-            value="$12,450"
-            subtitle="18 loads shipped"
+            value={userStatus === 'suspended' ? '$0' : '$12,450'}
+            subtitle={userStatus === 'suspended' ? 'Account suspended' : '18 loads shipped'}
             icon={<DollarSign className="w-6 h-6" />}
             color="green"
+            onClick={() => setSelectedMetric("revenue")}
           />
           <MetricCard 
             title="Success Rate"
-            value="99.2%"
-            subtitle="On-time deliveries"
+            value={userStatus === 'suspended' ? '0%' : '99.2%'}
+            subtitle={userStatus === 'suspended' ? 'Account suspended' : 'On-time deliveries'}
             icon={<TrendingUp className="w-6 h-6" />}
             color="purple"
+            onClick={() => setSelectedMetric("success")}
           />
-        </div>
+        </ChromaGrid>
 
         {/* Active Shipments */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Active Shipments</h2>
-            <button className="text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1">
-              <Filter className="w-4 h-4" />
-              Filter
-            </button>
-          </div>
+        {userStatus !== 'suspended' && (
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">Active Shipments</h2>
+              <button className="text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1">
+                <Filter className="w-4 h-4" />
+                Filter
+              </button>
+            </div>
 
-          <div className="space-y-4">
-            {activeShipments.map((shipment) => (
+            <div className="space-y-4">
+              {visibleActiveShipments.map((shipment) => (
               <div key={shipment.id} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition">
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -205,18 +279,20 @@ export function ShipperDashboard() {
             ))}
           </div>
         </div>
+        )}
 
         {/* Pending Loads */}
+        {userStatus !== 'suspended' && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Pending Loads</h2>
             <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold">
-              {pendingLoads.length} Awaiting Assignment
+              {visiblePendingLoads.length} Awaiting Assignment
             </span>
           </div>
 
           <div className="space-y-4">
-            {pendingLoads.map((load) => (
+            {visiblePendingLoads.map((load) => (
               <div key={load.id} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition">
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -237,7 +313,7 @@ export function ShipperDashboard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <div className="text-xs text-gray-500 mb-1">Cargo Type</div>
                     <div className="text-sm font-semibold text-gray-900">{load.cargo}</div>
@@ -251,21 +327,14 @@ export function ShipperDashboard() {
                     <div className="text-sm font-semibold text-gray-900">{load.pickup}</div>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                  <div className="text-sm text-gray-600">
-                    <span className="font-semibold text-blue-600">{load.responses}</span> fleet owners responded
-                  </div>
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition text-sm">
-                    View Bids
-                  </button>
-                </div>
               </div>
             ))}
           </div>
         </div>
+        )}
 
         {/* Recent Completed Shipments */}
+        {userStatus !== 'suspended' && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Completed Shipments</h2>
           <div className="space-y-3">
@@ -297,7 +366,16 @@ export function ShipperDashboard() {
             ))}
           </div>
         </div>
+        )}
       </div>
+
+      {/* Metric Detail Modals */}
+      {selectedMetric && (
+        <MetricDetailModal 
+          metric={selectedMetric} 
+          onClose={() => setSelectedMetric(null)} 
+        />
+      )}
     </DashboardLayout>
   );
 }
@@ -308,24 +386,228 @@ interface MetricCardProps {
   subtitle: string;
   icon: React.ReactNode;
   color: string;
+  onClick?: () => void;
 }
 
-function MetricCard({ title, value, subtitle, icon, color }: MetricCardProps) {
+function MetricCard({ title, value, subtitle, icon, color, onClick }: MetricCardProps) {
   const colorClasses = {
-    blue: "bg-blue-100 text-blue-600",
-    green: "bg-green-100 text-green-600",
-    purple: "bg-purple-100 text-purple-600",
-    orange: "bg-orange-100 text-orange-600",
+    blue: { bg: "bg-blue-100", text: "text-blue-600", spotlight: "rgba(59, 130, 246, 0.4)" },
+    green: { bg: "bg-green-100", text: "text-green-600", spotlight: "rgba(16, 185, 129, 0.4)" },
+    purple: { bg: "bg-purple-100", text: "text-purple-600", spotlight: "rgba(168, 85, 247, 0.4)" },
+    orange: { bg: "bg-orange-100", text: "text-orange-600", spotlight: "rgba(245, 158, 11, 0.4)" },
   }[color];
 
+  const handleCardMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    card.style.setProperty('--mouse-x', `${x}px`);
+    card.style.setProperty('--mouse-y', `${y}px`);
+  };
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition">
-      <div className={`w-12 h-12 rounded-lg ${colorClasses} flex items-center justify-center mb-4`}>
-        {icon}
+    <div 
+      className="chroma-card"
+      onClick={onClick}
+      onMouseMove={handleCardMove}
+      style={{
+        '--spotlight-color': colorClasses.spotlight
+      } as React.CSSProperties}
+    >
+      <div className="chroma-card-content">
+        <div className={`w-12 h-12 rounded-lg ${colorClasses.bg} ${colorClasses.text} flex items-center justify-center mb-4`}>
+          {icon}
+        </div>
+        <div className="text-3xl font-bold text-gray-900 mb-1">{value}</div>
+        <div className="text-sm font-semibold text-gray-700 mb-1">{title}</div>
+        <div className="text-xs text-gray-500">{subtitle}</div>
       </div>
-      <div className="text-3xl font-bold text-gray-900 mb-1">{value}</div>
-      <div className="text-sm font-semibold text-gray-700 mb-1">{title}</div>
-      <div className="text-xs text-gray-500">{subtitle}</div>
+    </div>
+  );
+}
+
+interface MetricDetailModalProps {
+  metric: string;
+  onClose: () => void;
+}
+
+function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
+  const detailData = {
+    shipments: {
+      title: "Active Shipments",
+      icon: <Truck className="w-8 h-8" />,
+      color: "blue",
+      current: "2",
+      breakdown: [
+        { label: "In Transit", value: "1", percentage: "50%", change: "+1" },
+        { label: "Assigned", value: "1", percentage: "50%", change: "0" },
+        { label: "Delayed", value: "0", percentage: "0%", change: "0" },
+      ],
+      monthlyData: [
+        { month: "Jan", value: 8 },
+        { month: "Feb", value: 12 },
+        { month: "Mar", value: 15 },
+        { month: "Apr", value: 18 },
+        { month: "May", value: 22 },
+        { month: "Jun", value: 24 },
+      ]
+    },
+    pending: {
+      title: "Pending Loads",
+      icon: <Clock className="w-8 h-8" />,
+      color: "orange",
+      current: "2",
+      breakdown: [
+        { label: "Awaiting Assignment", value: "2", percentage: "100%", change: "+2" },
+        { label: "Under Review", value: "0", percentage: "0%", change: "0" },
+        { label: "Cancelled", value: "0", percentage: "0%", change: "0" },
+      ],
+      monthlyData: [
+        { month: "Jan", value: 5 },
+        { month: "Feb", value: 3 },
+        { month: "Mar", value: 4 },
+        { month: "Apr", value: 6 },
+        { month: "May", value: 3 },
+        { month: "Jun", value: 2 },
+      ]
+    },
+    revenue: {
+      title: "Monthly Revenue",
+      icon: <DollarSign className="w-8 h-8" />,
+      color: "green",
+      current: "$12,450",
+      breakdown: [
+        { label: "Long Distance", value: "$7,800", percentage: "62.7%", change: "+$1,200" },
+        { label: "Regional", value: "$3,200", percentage: "25.7%", change: "+$450" },
+        { label: "Local", value: "$1,450", percentage: "11.6%", change: "+$180" },
+      ],
+      monthlyData: [
+        { month: "Jan", value: 8500 },
+        { month: "Feb", value: 9200 },
+        { month: "Mar", value: 10100 },
+        { month: "Apr", value: 10800 },
+        { month: "May", value: 11500 },
+        { month: "Jun", value: 12450 },
+      ]
+    },
+    success: {
+      title: "Success Rate",
+      icon: <TrendingUp className="w-8 h-8" />,
+      color: "purple",
+      current: "99.2%",
+      breakdown: [
+        { label: "On-Time Deliveries", value: "124", percentage: "99.2%", change: "+8" },
+        { label: "Delayed", value: "1", percentage: "0.8%", change: "-2" },
+        { label: "Issues Resolved", value: "100%", percentage: "100%", change: "0" },
+      ],
+      monthlyData: [
+        { month: "Jan", value: 97.5 },
+        { month: "Feb", value: 98.2 },
+        { month: "Mar", value: 98.8 },
+        { month: "Apr", value: 99.0 },
+        { month: "May", value: 99.1 },
+        { month: "Jun", value: 99.2 },
+      ]
+    }
+  };
+
+  const data = detailData[metric as keyof typeof detailData];
+  
+  const colorClasses = {
+    blue: { bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-200" },
+    green: { bg: "bg-green-100", text: "text-green-600", border: "border-green-200" },
+    purple: { bg: "bg-purple-100", text: "text-purple-600", border: "border-purple-200" },
+    orange: { bg: "bg-orange-100", text: "text-orange-600", border: "border-orange-200" },
+  }[data.color];
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className={`${colorClasses.bg} ${colorClasses.border} border-b p-6 flex items-center justify-between`}>
+          <div className="flex items-center gap-4">
+            <div className={`w-16 h-16 ${colorClasses.bg} ${colorClasses.text} rounded-xl flex items-center justify-center border-2 ${colorClasses.border}`}>
+              {data.icon}
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">{data.title}</h2>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{data.current}</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose}
+            className="w-10 h-10 rounded-lg hover:bg-white/50 flex items-center justify-center transition"
+          >
+            <X className="w-6 h-6 text-gray-600" />
+          </button>
+        </div>
+
+        {/* Content - Scrollable */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+          {/* Breakdown */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Breakdown</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {data.breakdown.map((item) => (
+                <div key={item.label} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="text-sm text-gray-600 mb-1">{item.label}</div>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">{item.value}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500">{item.percentage}</span>
+                    <span className={`text-xs font-semibold ${item.change.startsWith('+') ? 'text-green-600' : item.change.startsWith('-') ? 'text-red-600' : 'text-gray-600'}`}>
+                      {item.change}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Chart */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">6-Month Trend</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={data.monthlyData}>
+                <defs>
+                  <linearGradient id={`color${metric}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={
+                      data.color === 'blue' ? '#3b82f6' :
+                      data.color === 'green' ? '#10b981' :
+                      data.color === 'purple' ? '#a855f7' :
+                      '#f59e0b'
+                    } stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={
+                      data.color === 'blue' ? '#3b82f6' :
+                      data.color === 'green' ? '#10b981' :
+                      data.color === 'purple' ? '#a855f7' :
+                      '#f59e0b'
+                    } stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="month" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke={
+                    data.color === 'blue' ? '#3b82f6' :
+                    data.color === 'green' ? '#10b981' :
+                    data.color === 'purple' ? '#a855f7' :
+                    '#f59e0b'
+                  }
+                  strokeWidth={2} 
+                  fill={`url(#color${metric})`} 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

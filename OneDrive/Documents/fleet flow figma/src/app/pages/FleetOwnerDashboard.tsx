@@ -10,9 +10,13 @@ import {
   MapPin,
   Clock,
   AlertCircle,
-  X
+  X,
+  CheckCircle,
+  Eye,
+  Calendar,
+  Weight
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const revenueData = [
@@ -49,6 +53,65 @@ export function FleetOwnerDashboard() {
   const currentUserId = sessionStorage.getItem('currentUserId') || 'FO001';
   const currentUserName = sessionStorage.getItem('currentUserName') || 'James Anderson';
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+  const [availableLoads, setAvailableLoads] = useState<any[]>([]);
+  const [selectedLoad, setSelectedLoad] = useState<any>(null);
+  const [isLoadDetailOpen, setIsLoadDetailOpen] = useState(false);
+
+  // Load available loads from localStorage
+  useEffect(() => {
+    const loadAvailableLoads = () => {
+      const loadsData = localStorage.getItem('posted_loads');
+      if (loadsData) {
+        const loads = JSON.parse(loadsData);
+        // Show only pending loads (not yet accepted)
+        const pendingLoads = loads.filter((load: any) => load.status === 'pending');
+        setAvailableLoads(pendingLoads);
+      }
+    };
+
+    loadAvailableLoads();
+    
+    // Refresh loads every 10 seconds
+    const interval = setInterval(loadAvailableLoads, 10000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleAcceptLoad = (loadId: string) => {
+    const loadsData = localStorage.getItem('posted_loads');
+    if (loadsData) {
+      const loads = JSON.parse(loadsData);
+      const updatedLoads = loads.map((load: any) => 
+        load.id === loadId 
+          ? { 
+              ...load, 
+              status: 'accepted', 
+              fleetOwnerId: currentUserId,
+              fleetOwnerName: currentUserName,
+              acceptedAt: new Date().toISOString()
+            }
+          : load
+      );
+      localStorage.setItem('posted_loads', JSON.stringify(updatedLoads));
+      
+      // Refresh available loads
+      const pendingLoads = updatedLoads.filter((load: any) => load.status === 'pending');
+      setAvailableLoads(pendingLoads);
+      
+      // Close modal if it was the accepted load
+      if (selectedLoad?.id === loadId) {
+        setIsLoadDetailOpen(false);
+        setSelectedLoad(null);
+      }
+      
+      alert(`Load ${loadId} accepted successfully! You can now assign it to a driver.`);
+    }
+  };
+
+  const handleViewLoadDetails = (load: any) => {
+    setSelectedLoad(load);
+    setIsLoadDetailOpen(true);
+  };
 
   return (
     <DashboardLayout role="fleet-owner" userName={currentUserName} userId={currentUserId}>
@@ -191,6 +254,98 @@ export function FleetOwnerDashboard() {
           </div>
         </div>
 
+        {/* Available Loads */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900">Available Loads</h2>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                {availableLoads.length} Available
+              </span>
+              <button 
+                onClick={() => {
+                  const loadsData = localStorage.getItem('posted_loads');
+                  if (loadsData) {
+                    const loads = JSON.parse(loadsData);
+                    const pendingLoads = loads.filter((load: any) => load.status === 'pending');
+                    setAvailableLoads(pendingLoads);
+                  }
+                }}
+                className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+          
+          {availableLoads.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>No available loads at the moment</p>
+              <p className="text-sm">New loads will appear here when shippers post them</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {availableLoads.map((load) => (
+                <div key={load.id} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg font-bold text-gray-900">{load.id}</span>
+                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                          New Load
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          Posted by {load.shipperName}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600 mb-2">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-sm font-medium">{load.origin} → {load.destination}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          <span>Pickup: {load.pickup}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Package className="w-4 h-4" />
+                          <span>{load.cargoType}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Weight className="w-4 h-4" />
+                          <span>{load.weight}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right ml-4">
+                      <div className="text-2xl font-bold text-green-600">${load.rate}</div>
+                      <div className="text-xs text-gray-500">Offered Rate</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3 pt-3 border-t border-gray-200">
+                    <button
+                      onClick={() => handleViewLoadDetails(load)}
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View Details
+                    </button>
+                    <button
+                      onClick={() => handleAcceptLoad(load.id)}
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Accept Load
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Recent Loads */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
@@ -245,6 +400,18 @@ export function FleetOwnerDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Load Detail Modal */}
+      {isLoadDetailOpen && selectedLoad && (
+        <LoadDetailModal 
+          load={selectedLoad} 
+          onClose={() => {
+            setIsLoadDetailOpen(false);
+            setSelectedLoad(null);
+          }}
+          onAccept={() => handleAcceptLoad(selectedLoad.id)}
+        />
+      )}
 
       {/* Metric Detail Modals */}
       {selectedMetric && (
@@ -408,7 +575,7 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className={`${colorClasses.bg} ${colorClasses.border} border-b p-6 flex items-center justify-between`}>
           <div className="flex items-center gap-4">
@@ -428,8 +595,8 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
+        {/* Content - Scrollable */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
           {/* Breakdown */}
           <div>
             <h3 className="text-lg font-bold text-gray-900 mb-4">Breakdown</h3>
@@ -490,6 +657,190 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
                 />
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+interface LoadDetailModalProps {
+  load: any;
+  onClose: () => void;
+  onAccept: () => void;
+}
+
+function LoadDetailModal({ load, onClose, onAccept }: LoadDetailModalProps) {
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">{load.id}</h2>
+              <p className="text-blue-100 text-sm mt-1">Load Details</p>
+            </div>
+            <button 
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-lg transition"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content - Scrollable */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+          {/* Route Information */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-blue-600" />
+              Route Information
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="text-sm text-gray-600 mb-1">Origin</div>
+                <div className="font-semibold text-gray-900">{load.origin}</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="text-sm text-gray-600 mb-1">Destination</div>
+                <div className="font-semibold text-gray-900">{load.destination}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Schedule */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-green-600" />
+              Schedule
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="text-sm text-gray-600 mb-1">Pickup</div>
+                <div className="font-semibold text-gray-900">{load.pickup}</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="text-sm text-gray-600 mb-1">Delivery</div>
+                <div className="font-semibold text-gray-900">{load.delivery || 'TBD'}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Cargo Details */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Package className="w-5 h-5 text-purple-600" />
+              Cargo Details
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="text-sm text-gray-600 mb-1">Cargo Type</div>
+                <div className="font-semibold text-gray-900">{load.cargoType}</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="text-sm text-gray-600 mb-1">Weight</div>
+                <div className="font-semibold text-gray-900">{load.weight}</div>
+              </div>
+              {load.dimensions && (
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div className="text-sm text-gray-600 mb-1">Dimensions</div>
+                  <div className="font-semibold text-gray-900">{load.dimensions}</div>
+                </div>
+              )}
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <div className="text-sm text-green-600 mb-1">Offered Rate</div>
+                <div className="text-2xl font-bold text-green-700">${load.rate}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Information */}
+          {(load.specialRequirements || load.description) && (
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Additional Information</h3>
+              <div className="space-y-4">
+                {load.specialRequirements && (
+                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <div className="text-sm text-yellow-600 mb-1">Special Requirements</div>
+                    <div className="text-gray-900">{load.specialRequirements}</div>
+                  </div>
+                )}
+                {load.description && (
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="text-sm text-gray-600 mb-1">Description</div>
+                    <div className="text-gray-900">{load.description}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Contact Information */}
+          {(load.contactName || load.contactPhone || load.contactEmail) && (
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Contact Information</h3>
+              <div className="grid grid-cols-3 gap-4">
+                {load.contactName && (
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="text-sm text-gray-600 mb-1">Contact Name</div>
+                    <div className="font-semibold text-gray-900">{load.contactName}</div>
+                  </div>
+                )}
+                {load.contactPhone && (
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="text-sm text-gray-600 mb-1">Phone</div>
+                    <div className="font-semibold text-gray-900">{load.contactPhone}</div>
+                  </div>
+                )}
+                {load.contactEmail && (
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="text-sm text-gray-600 mb-1">Email</div>
+                    <div className="font-semibold text-gray-900">{load.contactEmail}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Shipper Information */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Shipper Information</h3>
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-blue-600 mb-1">Posted by</div>
+                  <div className="font-semibold text-blue-900">{load.shipperName}</div>
+                  <div className="text-sm text-blue-700">ID: {load.shipperId}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-blue-600 mb-1">Posted on</div>
+                  <div className="font-semibold text-blue-900">
+                    {new Date(load.createdAt).toLocaleDateString()}
+                  </div>
+                  <div className="text-sm text-blue-700">
+                    {new Date(load.createdAt).toLocaleTimeString()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4 pt-6 border-t border-gray-200">
+            <button
+              onClick={onClose}
+              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+            >
+              Close
+            </button>
+            <button
+              onClick={onAccept}
+              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+            >
+              <CheckCircle className="w-5 h-5" />
+              Accept This Load
+            </button>
           </div>
         </div>
       </div>

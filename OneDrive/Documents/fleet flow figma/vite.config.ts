@@ -18,6 +18,9 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    headers: {
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self';"
+    }
   },
   build: {
     outDir: 'dist',

@@ -548,7 +548,7 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className={`${colorClasses.bg} ${colorClasses.border} border-b p-6 flex items-center justify-between`}>
           <div className="flex items-center gap-4">
@@ -568,8 +568,8 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
+        {/* Content - Scrollable */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
           {/* Breakdown */}
           <div>
             <h3 className="text-lg font-bold text-gray-900 mb-4">Breakdown</h3>

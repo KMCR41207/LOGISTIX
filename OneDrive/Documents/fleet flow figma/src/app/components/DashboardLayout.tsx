@@ -112,13 +112,7 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
     };
 
     loadProfilePicture();
-    
-    // Reload profile picture when profile modal closes
-    if (!isProfileOpen) {
-      console.log('Profile modal closed, reloading picture...');
-      loadProfilePicture();
-    }
-  }, [userId, isProfileOpen, currentUserName]);
+  }, [userId]);
 
   const navigation = {
     "fleet-owner": [
@@ -285,7 +279,25 @@ export function DashboardLayout({ children, role, userName, userId = "UNKNOWN" }
       {/* User Profile Modal */}
       <UserProfileModal
         isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
+        onClose={() => {
+          console.log('Profile modal closing...');
+          setIsProfileOpen(false);
+          // Force reload profile picture after modal closes
+          setTimeout(() => {
+            console.log('Reloading profile picture after modal close');
+            const stored = localStorage.getItem(`profile_${userId}`);
+            if (stored) {
+              const profileData = JSON.parse(stored);
+              if (profileData.profilePicture) {
+                setProfilePicture(profileData.profilePicture);
+                console.log('✓ Profile picture reloaded');
+              }
+              if (profileData.name) {
+                setCurrentUserName(profileData.name);
+              }
+            }
+          }, 100);
+        }}
         userId={userId}
         userName={currentUserName}
         role={role}

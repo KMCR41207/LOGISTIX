@@ -22,14 +22,23 @@ export function LoginPage() {
       "SH002": { role: "shipper", password: "shipper123", name: "Shipper 2" },
     };
 
-    try {
-      const savedUsers = localStorage.getItem('logistix_users');
-      let userMap = { ...defaultUsers };
+    console.log("=== LOADING USERS ===");
+    console.log("Default users:", defaultUsers);
 
+    try {
+      let userMap: any = {};
+      const savedUsers = localStorage.getItem('logistix_users');
+
+      // Always start with default users
+      Object.entries(defaultUsers).forEach(([id, data]) => {
+        userMap[id] = { ...data };
+      });
+
+      // Then override with any saved users from localStorage
       if (savedUsers) {
         try {
           const userList = JSON.parse(savedUsers);
-          console.log("Loaded users from localStorage:", userList);
+          console.log("Loaded from localStorage:", userList);
           
           const roleMap: any = {
             "Admin": "admin",
@@ -40,7 +49,12 @@ export function LoginPage() {
           
           // Process all users from localStorage
           userList.forEach((user: any) => {
-            // Convert role format: "Fleet Owner" -> "fleet-owner"
+            // Skip if no password is defined
+            if (!user.password) {
+              console.warn(`User ${user.id} has no password, skipping`);
+              return;
+            }
+            
             let roleValue = user.role;
             if (roleMap[user.role]) {
               roleValue = roleMap[user.role];
@@ -48,21 +62,49 @@ export function LoginPage() {
               roleValue = user.role.toLowerCase().replace(/\s+/g, '-');
             }
             
-            // Add or update user in map (including defaults if they exist in localStorage)
             userMap[user.id] = { 
               role: roleValue, 
-              password: user.password, // Use the exact password stored
+              password: user.password,
               name: user.name 
             };
           });
-          
-          console.log("Final user map:", userMap);
         } catch (e) {
           console.error("Error parsing saved users, using defaults");
-          userMap = { ...defaultUsers };
         }
       }
 
+      // Always ensure default users are saved to localStorage with passwords
+      const defaultUsersList = Object.entries(defaultUsers).map(([id, data]) => ({
+        id,
+        name: data.name,
+        role: data.role === "fleet-owner" ? "Fleet Owner" : 
+              data.role === "driver" ? "Driver" : 
+              data.role === "shipper" ? "Shipper" : "Admin",
+        password: data.password,
+        status: "active",
+        joinDate: new Date().toISOString().split('T')[0]
+      }));
+      
+      if (!savedUsers) {
+        localStorage.setItem('logistix_users', JSON.stringify(defaultUsersList));
+        console.log("✓ Saved default users to localStorage");
+      } else {
+        // Merge with existing users, ensuring default users always have passwords
+        const existingUsers = JSON.parse(savedUsers);
+        const mergedUsers = [...defaultUsersList];
+        
+        existingUsers.forEach((user: any) => {
+          // Only add if not a default user and has a password
+          if (!defaultUsers[user.id as keyof typeof defaultUsers] && user.password) {
+            mergedUsers.push(user);
+          }
+        });
+        
+        localStorage.setItem('logistix_users', JSON.stringify(mergedUsers));
+        console.log("✓ Merged and saved users to localStorage");
+      }
+
+      console.log("Final users map:", userMap);
       setUsers(userMap);
     } catch (e) {
       console.error("Error loading users:", e);
@@ -74,42 +116,57 @@ export function LoginPage() {
     e.preventDefault();
     setError("");
 
-    // If users is empty, show error
     if (Object.keys(users).length === 0) {
       setError("System loading, please try again");
       return;
     }
 
-    // Clean and normalize user ID - trim whitespace and convert to uppercase
     const normalizedUserId = userId.trim().toUpperCase();
     const user = users[normalizedUserId as keyof typeof users];
     
     if (!user) {
-      setError(`User ID "${normalizedUserId}" not found`);
-      console.log("Available user IDs:", Object.keys(users));
+      setError(`User ID not found: ${normalizedUserId}`);
       return;
     }
 
-    // Debug log
-    console.log("Login attempt:");
-    console.log("- User ID:", normalizedUserId);
-    console.log("- User found:", user);
-    console.log("- Password stored:", user.password);
-    console.log("- Password entered:", password);
-    console.log("- Passwords match:", user.password === password.trim());
+    const enteredPassword = password.trim();
+    const storedPassword = user.password;
 
-    // Check password - trim whitespace from entered password
-    if (user.password !== password.trim()) {
+    console.log("=== LOGIN ===");
+    console.log("ID:", normalizedUserId);
+    console.log("Stored pass:", storedPassword);
+    console.log("Entered pass:", enteredPassword);
+    
+    // Check if password exists
+    if (!storedPassword) {
+      console.error("No password stored for this user!");
+      setError("Account configuration error. Please contact administrator.");
+      return;
+    }
+    
+    console.log("Match:", storedPassword === enteredPassword);
+    console.log("Stored length:", storedPassword.length);
+    console.log("Entered length:", enteredPassword.length);
+
+    if (storedPassword !== enteredPassword) {
+      console.error("Password mismatch!");
+      console.error("Stored:", JSON.stringify(storedPassword));
+      console.error("Entered:", JSON.stringify(enteredPassword));
       setError("Invalid Password");
       return;
     }
 
-    // Store current user info for dashboard
+    console.log("✓ Login successful!");
     sessionStorage.setItem('currentUserId', normalizedUserId);
     sessionStorage.setItem('currentUserName', user.name);
-
-    // Navigate based on role associated with the ID
-    navigate(`/${user.role}`);
+    
+    // Normalize role to lowercase with hyphens
+    let normalizedRole = user.role;
+    if (typeof normalizedRole === 'string') {
+      normalizedRole = normalizedRole.toLowerCase().replace(/\s+/g, '-');
+    }
+    
+    navigate(`/${normalizedRole}`);
   };
 
   return (

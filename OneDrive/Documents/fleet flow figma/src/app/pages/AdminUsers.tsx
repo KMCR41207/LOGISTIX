@@ -340,19 +340,23 @@ export function AdminUsers() {
       {/* Create User Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
             {/* Close Button */}
             <button 
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition"
+              className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition z-10"
             >
-              <X className="w-6 h-6 text-gray-600" />
+              <X className="w-6 h-6 text-white" />
             </button>
+
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+              <h2 className="text-2xl font-bold">Create New User</h2>
+              <p className="text-blue-100 text-sm mt-1">Add a new user to the platform</p>
+            </div>
 
             {/* Modal Content */}
             <div className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Create New User</h2>
-
               <form onSubmit={handleCreateUser} className="space-y-5">
                 {/* User Name */}
                 <div>
@@ -437,19 +441,23 @@ export function AdminUsers() {
       {/* Edit Profile Modal */}
       {isEditModalOpen && editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
             {/* Close Button */}
             <button 
               onClick={() => setIsEditModalOpen(false)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition"
+              className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition z-10"
             >
-              <X className="w-6 h-6 text-gray-600" />
+              <X className="w-6 h-6 text-white" />
             </button>
+
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+              <h2 className="text-2xl font-bold">Edit User Profile</h2>
+              <p className="text-blue-100 text-sm mt-1">Update user information</p>
+            </div>
 
             {/* Modal Content */}
             <div className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit User Profile</h2>
-
               <form onSubmit={handleSaveEditProfile} className="space-y-5">
                 {/* User ID (Read-only) */}
                 <div>
@@ -515,19 +523,19 @@ export function AdminUsers() {
       {/* View Profile Modal */}
       {isProfileModalOpen && viewingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Close Button */}
             <button 
               onClick={() => setIsProfileModalOpen(false)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition z-10"
+              className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition z-10"
             >
-              <X className="w-6 h-6 text-gray-600" />
+              <X className="w-6 h-6 text-white" />
             </button>
 
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8 rounded-t-2xl">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8">
               <div className="flex items-center gap-6">
-                <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-4xl font-bold border-4 border-white/30">
+                <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-4xl font-bold border-4 border-white/30 shadow-lg">
                   {viewingUser.name.charAt(0)}
                 </div>
                 <div className="flex-1">
@@ -549,8 +557,8 @@ export function AdminUsers() {
               </div>
             </div>
 
-            {/* Content */}
-            <div className="p-8 space-y-6">
+            {/* Content - Scrollable */}
+            <div className="p-8 space-y-6 overflow-y-auto flex-1">
               {/* Basic Information */}
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">

@@ -74,7 +74,7 @@ export function LandingPage() {
                 onClick={() => navigate("/login")}
                 className="px-8 py-4 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition text-lg shadow-xl hover:shadow-2xl hover:scale-105 transform"
               >
-                Get Started Free
+                User Login
               </button>
               <button 
                 onClick={() => setIsVideoModalOpen(true)}
@@ -266,17 +266,6 @@ export function LandingPage() {
               </ul>
               <p className="mt-4 text-sm text-blue-600 font-semibold">Click to learn more →</p>
             </div>
-          </div>
-
-          {/* Single User Login Button */}
-          <div className="text-center">
-            <button 
-              onClick={() => navigate("/login")}
-              className="px-12 py-4 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition text-xl shadow-xl hover:shadow-2xl hover:scale-105 transform"
-            >
-              User Login
-            </button>
-            <p className="mt-4 text-gray-600">Login with your User ID to access your personalized dashboard</p>
           </div>
         </div>
       </section>

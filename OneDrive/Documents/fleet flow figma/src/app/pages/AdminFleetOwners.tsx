@@ -120,19 +120,19 @@ export function AdminFleetOwners() {
       {/* Fleet Owner Profile Modal */}
       {isProfileModalOpen && viewingOwner && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Close Button */}
             <button 
               onClick={() => setIsProfileModalOpen(false)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition z-10"
+              className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition z-10"
             >
-              <X className="w-6 h-6 text-gray-600" />
+              <X className="w-6 h-6 text-white" />
             </button>
 
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8 rounded-t-2xl">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8">
               <div className="flex items-center gap-6">
-                <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-4 border-white/30">
+                <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-4 border-white/30 shadow-lg">
                   <Truck className="w-12 h-12" />
                 </div>
                 <div className="flex-1">
@@ -151,8 +151,8 @@ export function AdminFleetOwners() {
               </div>
             </div>
 
-            {/* Content */}
-            <div className="p-8 space-y-6">
+            {/* Content - Scrollable */}
+            <div className="p-8 space-y-6 overflow-y-auto flex-1">
               {/* Key Metrics */}
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Fleet Overview</h3>

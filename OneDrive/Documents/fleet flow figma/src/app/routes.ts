@@ -4,6 +4,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { FleetOwnerDashboard } from "./pages/FleetOwnerDashboard";
 import { DriverDashboard } from "./pages/DriverDashboard";
 import { ShipperDashboard } from "./pages/ShipperDashboard";
+import { PostLoad } from "./pages/PostLoad";
+import { MyShipments } from "./pages/MyShipments";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { AdminUsers } from "./pages/AdminUsers";
 import { AdminFleetOwners } from "./pages/AdminFleetOwners";
@@ -51,6 +53,14 @@ export const router = createBrowserRouter([
   {
     path: "/shipper",
     Component: ShipperDashboard,
+  },
+  {
+    path: "/shipper/post",
+    Component: PostLoad,
+  },
+  {
+    path: "/shipper/shipments",
+    Component: MyShipments,
   },
   {
     path: "/admin",

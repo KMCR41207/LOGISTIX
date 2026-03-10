@@ -1,4 +1,5 @@
 import { DashboardLayout } from "../components/DashboardLayout";
+import { ChromaGrid } from "../components/ChromaGrid";
 import { 
   Package, 
   DollarSign, 
@@ -7,8 +8,11 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Navigation
+  Navigation,
+  X
 } from "lucide-react";
+import { useState } from "react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const assignedLoads = [
   { 
@@ -57,6 +61,8 @@ const completedLoads = [
 ];
 
 export function DriverDashboard() {
+  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+
   return (
     <DashboardLayout role="driver" userName="Michael Rodriguez">
       <div className="space-y-6">
@@ -67,13 +73,14 @@ export function DriverDashboard() {
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <ChromaGrid radius={350} columns={4} damping={0.45} fadeOut={0.6}>
           <MetricCard 
             title="This Month's Earnings"
             value="$8,450"
             subtitle="12 loads completed"
             icon={<DollarSign className="w-6 h-6" />}
             color="green"
+            onClick={() => setSelectedMetric("earnings")}
           />
           <MetricCard 
             title="Active Load"
@@ -81,6 +88,7 @@ export function DriverDashboard() {
             subtitle="In transit to Portland"
             icon={<Package className="w-6 h-6" />}
             color="blue"
+            onClick={() => setSelectedMetric("active")}
           />
           <MetricCard 
             title="Pending Offers"
@@ -88,6 +96,7 @@ export function DriverDashboard() {
             subtitle="Awaiting your response"
             icon={<Clock className="w-6 h-6" />}
             color="orange"
+            onClick={() => setSelectedMetric("pending")}
           />
           <MetricCard 
             title="On-Time Rate"
@@ -95,8 +104,9 @@ export function DriverDashboard() {
             subtitle="Excellent performance"
             icon={<TrendingUp className="w-6 h-6" />}
             color="purple"
+            onClick={() => setSelectedMetric("ontime")}
           />
-        </div>
+        </ChromaGrid>
 
         {/* Active Load */}
         {activeLoads.length > 0 && (
@@ -256,6 +266,14 @@ export function DriverDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Metric Detail Modals */}
+      {selectedMetric && (
+        <MetricDetailModal 
+          metric={selectedMetric} 
+          onClose={() => setSelectedMetric(null)} 
+        />
+      )}
     </DashboardLayout>
   );
 }
@@ -266,24 +284,228 @@ interface MetricCardProps {
   subtitle: string;
   icon: React.ReactNode;
   color: string;
+  onClick?: () => void;
 }
 
-function MetricCard({ title, value, subtitle, icon, color }: MetricCardProps) {
+function MetricCard({ title, value, subtitle, icon, color, onClick }: MetricCardProps) {
   const colorClasses = {
-    blue: "bg-blue-100 text-blue-600",
-    green: "bg-green-100 text-green-600",
-    purple: "bg-purple-100 text-purple-600",
-    orange: "bg-orange-100 text-orange-600",
+    blue: { bg: "bg-blue-100", text: "text-blue-600", spotlight: "rgba(59, 130, 246, 0.4)" },
+    green: { bg: "bg-green-100", text: "text-green-600", spotlight: "rgba(16, 185, 129, 0.4)" },
+    purple: { bg: "bg-purple-100", text: "text-purple-600", spotlight: "rgba(168, 85, 247, 0.4)" },
+    orange: { bg: "bg-orange-100", text: "text-orange-600", spotlight: "rgba(245, 158, 11, 0.4)" },
   }[color];
 
+  const handleCardMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    card.style.setProperty('--mouse-x', `${x}px`);
+    card.style.setProperty('--mouse-y', `${y}px`);
+  };
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition">
-      <div className={`w-12 h-12 rounded-lg ${colorClasses} flex items-center justify-center mb-4`}>
-        {icon}
+    <div 
+      className="chroma-card"
+      onClick={onClick}
+      onMouseMove={handleCardMove}
+      style={{
+        '--spotlight-color': colorClasses.spotlight
+      } as React.CSSProperties}
+    >
+      <div className="chroma-card-content">
+        <div className={`w-12 h-12 rounded-lg ${colorClasses.bg} ${colorClasses.text} flex items-center justify-center mb-4`}>
+          {icon}
+        </div>
+        <div className="text-3xl font-bold text-gray-900 mb-1">{value}</div>
+        <div className="text-sm font-semibold text-gray-700 mb-1">{title}</div>
+        <div className="text-xs text-gray-500">{subtitle}</div>
       </div>
-      <div className="text-3xl font-bold text-gray-900 mb-1">{value}</div>
-      <div className="text-sm font-semibold text-gray-700 mb-1">{title}</div>
-      <div className="text-xs text-gray-500">{subtitle}</div>
+    </div>
+  );
+}
+
+interface MetricDetailModalProps {
+  metric: string;
+  onClose: () => void;
+}
+
+function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
+  const detailData = {
+    earnings: {
+      title: "This Month's Earnings",
+      icon: <DollarSign className="w-8 h-8" />,
+      color: "green",
+      current: "$8,450",
+      breakdown: [
+        { label: "Long Haul", value: "$5,200", percentage: "61.5%", change: "+$850" },
+        { label: "Regional", value: "$2,400", percentage: "28.4%", change: "+$320" },
+        { label: "Local", value: "$850", percentage: "10.1%", change: "+$120" },
+      ],
+      monthlyData: [
+        { month: "Jan", value: 6200 },
+        { month: "Feb", value: 6800 },
+        { month: "Mar", value: 7100 },
+        { month: "Apr", value: 7600 },
+        { month: "May", value: 8000 },
+        { month: "Jun", value: 8450 },
+      ]
+    },
+    active: {
+      title: "Active Load",
+      icon: <Package className="w-8 h-8" />,
+      color: "blue",
+      current: "1",
+      breakdown: [
+        { label: "In Transit", value: "1", percentage: "100%", change: "0" },
+        { label: "Loading", value: "0", percentage: "0%", change: "0" },
+        { label: "Unloading", value: "0", percentage: "0%", change: "0" },
+      ],
+      monthlyData: [
+        { month: "Jan", value: 2 },
+        { month: "Feb", value: 3 },
+        { month: "Mar", value: 2 },
+        { month: "Apr", value: 3 },
+        { month: "May", value: 2 },
+        { month: "Jun", value: 1 },
+      ]
+    },
+    pending: {
+      title: "Pending Offers",
+      icon: <Clock className="w-8 h-8" />,
+      color: "orange",
+      current: "2",
+      breakdown: [
+        { label: "New Offers", value: "2", percentage: "100%", change: "+2" },
+        { label: "Under Review", value: "0", percentage: "0%", change: "0" },
+        { label: "Expiring Soon", value: "0", percentage: "0%", change: "0" },
+      ],
+      monthlyData: [
+        { month: "Jan", value: 5 },
+        { month: "Feb", value: 4 },
+        { month: "Mar", value: 6 },
+        { month: "Apr", value: 3 },
+        { month: "May", value: 4 },
+        { month: "Jun", value: 2 },
+      ]
+    },
+    ontime: {
+      title: "On-Time Rate",
+      icon: <TrendingUp className="w-8 h-8" />,
+      color: "purple",
+      current: "98%",
+      breakdown: [
+        { label: "On-Time Deliveries", value: "118", percentage: "98.3%", change: "+5" },
+        { label: "Delayed", value: "2", percentage: "1.7%", change: "-1" },
+        { label: "Early Deliveries", value: "45", percentage: "37.5%", change: "+8" },
+      ],
+      monthlyData: [
+        { month: "Jan", value: 96.5 },
+        { month: "Feb", value: 97.0 },
+        { month: "Mar", value: 97.5 },
+        { month: "Apr", value: 97.8 },
+        { month: "May", value: 98.0 },
+        { month: "Jun", value: 98.3 },
+      ]
+    }
+  };
+
+  const data = detailData[metric as keyof typeof detailData];
+  
+  const colorClasses = {
+    blue: { bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-200" },
+    green: { bg: "bg-green-100", text: "text-green-600", border: "border-green-200" },
+    purple: { bg: "bg-purple-100", text: "text-purple-600", border: "border-purple-200" },
+    orange: { bg: "bg-orange-100", text: "text-orange-600", border: "border-orange-200" },
+  }[data.color];
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className={`${colorClasses.bg} ${colorClasses.border} border-b p-6 flex items-center justify-between`}>
+          <div className="flex items-center gap-4">
+            <div className={`w-16 h-16 ${colorClasses.bg} ${colorClasses.text} rounded-xl flex items-center justify-center border-2 ${colorClasses.border}`}>
+              {data.icon}
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">{data.title}</h2>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{data.current}</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose}
+            className="w-10 h-10 rounded-lg hover:bg-white/50 flex items-center justify-center transition"
+          >
+            <X className="w-6 h-6 text-gray-600" />
+          </button>
+        </div>
+
+        {/* Content - Scrollable */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+          {/* Breakdown */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Breakdown</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {data.breakdown.map((item) => (
+                <div key={item.label} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="text-sm text-gray-600 mb-1">{item.label}</div>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">{item.value}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500">{item.percentage}</span>
+                    <span className={`text-xs font-semibold ${item.change.startsWith('+') ? 'text-green-600' : item.change.startsWith('-') ? 'text-red-600' : 'text-gray-600'}`}>
+                      {item.change}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Chart */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">6-Month Trend</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={data.monthlyData}>
+                <defs>
+                  <linearGradient id={`color${metric}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={
+                      data.color === 'blue' ? '#3b82f6' :
+                      data.color === 'green' ? '#10b981' :
+                      data.color === 'purple' ? '#a855f7' :
+                      '#f59e0b'
+                    } stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={
+                      data.color === 'blue' ? '#3b82f6' :
+                      data.color === 'green' ? '#10b981' :
+                      data.color === 'purple' ? '#a855f7' :
+                      '#f59e0b'
+                    } stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="month" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke={
+                    data.color === 'blue' ? '#3b82f6' :
+                    data.color === 'green' ? '#10b981' :
+                    data.color === 'purple' ? '#a855f7' :
+                    '#f59e0b'
+                  }
+                  strokeWidth={2} 
+                  fill={`url(#color${metric})`} 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

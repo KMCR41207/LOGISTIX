@@ -188,12 +188,14 @@ export function UserProfileModal({ isOpen, onClose, userId, userName, role, onPr
       
       alert("Profile updated successfully!");
       
-      // Trigger profile update callback
+      // Trigger profile update callback BEFORE closing
       if (onProfileUpdate) {
         console.log('Calling onProfileUpdate callback');
         onProfileUpdate();
       }
       
+      // Close modal after callback
+      console.log('Closing profile modal');
       onClose();
     } catch (error) {
       console.error('✗ Error saving profile:', error);
@@ -223,9 +225,9 @@ export function UserProfileModal({ isOpen, onClose, userId, userName, role, onPr
 
       {/* Modal */}
       <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden pointer-events-auto flex flex-col">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold">My Profile</h2>
@@ -240,8 +242,8 @@ export function UserProfileModal({ isOpen, onClose, userId, userName, role, onPr
             </div>
           </div>
 
-          {/* Content */}
-          <div className="p-6 space-y-6">
+          {/* Content - Scrollable */}
+          <div className="p-6 space-y-6 overflow-y-auto flex-1">
             {/* Profile Picture */}
             <div className="flex flex-col items-center">
               <div className="relative">
