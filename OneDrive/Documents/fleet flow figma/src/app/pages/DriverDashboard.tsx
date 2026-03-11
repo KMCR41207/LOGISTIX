@@ -11,7 +11,7 @@ import {
   Navigation,
   X
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const assignedLoads = [
@@ -72,7 +72,37 @@ export function DriverDashboard() {
   const [selectedLoad, setSelectedLoad] = useState<any>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
 
+  // Load driver's loads from localStorage on mount
+  useEffect(() => {
+    const loadsData = localStorage.getItem('posted_loads');
+    if (loadsData) {
+      const allLoads = JSON.parse(loadsData);
+      // Filter loads assigned to this driver
+      const driverLoads = allLoads.filter((load: any) => 
+        load.driverId === currentDriverId || 
+        (load.status === 'assigned' && load.truck === 'TRK-2401') // Temporary: match by truck
+      );
+      if (driverLoads.length > 0) {
+        setLoads(driverLoads);
+      }
+    }
+  }, [currentDriverId]);
+
   const handleStatusUpdate = (loadId: string, newStatus: string, additionalData?: any) => {
+    // Check if trying to start a new load while one is already active
+    if (newStatus === 'picking-up') {
+      const hasActiveLoad = loads.some(l => 
+        l.status === 'picking-up' || 
+        l.status === 'loaded' || 
+        l.status === 'in-transit'
+      );
+      
+      if (hasActiveLoad) {
+        alert('You already have an active load in progress. Please complete it before starting a new one.');
+        return;
+      }
+    }
+
     // Update local state
     setLoads(prevLoads => 
       prevLoads.map(load => 
@@ -125,6 +155,13 @@ export function DriverDashboard() {
     setIsStatusModalOpen(true);
   };
 
+  // Check if driver has any active load
+  const hasActiveLoad = loads.some(l => 
+    l.status === 'picking-up' || 
+    l.status === 'loaded' || 
+    l.status === 'in-transit'
+  );
+
   return (
     <DashboardLayout role="driver" userName="Michael Rodriguez">
       <div className="space-y-6">
@@ -170,13 +207,13 @@ export function DriverDashboard() {
           />
         </ChromaGrid>
 
-        {/* Active Load */}
-        {activeLoads.length > 0 && (
+        {/* Active Load - In Transit */}
+        {loads.filter(l => l.status === 'in-transit').length > 0 && (
           <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl p-6 text-white">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <div className="text-sm font-semibold text-blue-100 mb-1">ACTIVE LOAD</div>
-                <h2 className="text-2xl font-bold">{activeLoads[0].id}</h2>
+                <h2 className="text-2xl font-bold">{loads.filter(l => l.status === 'in-transit')[0].id}</h2>
               </div>
               <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-semibold backdrop-blur-sm">
                 In Transit
@@ -185,47 +222,47 @@ export function DriverDashboard() {
             
             <div className="flex items-center gap-2 text-lg mb-4">
               <MapPin className="w-5 h-5" />
-              <span>{activeLoads[0].origin} → {activeLoads[0].destination}</span>
+              <span>{loads.filter(l => l.status === 'in-transit')[0].origin} → {loads.filter(l => l.status === 'in-transit')[0].destination}</span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <div className="text-sm text-blue-100">ETA</div>
-                <div className="font-semibold">{activeLoads[0].eta}</div>
+                <div className="text-sm text-blue-100">Distance</div>
+                <div className="font-semibold">{loads.filter(l => l.status === 'in-transit')[0].distance}</div>
               </div>
               <div>
                 <div className="text-sm text-blue-100">Earnings</div>
-                <div className="font-semibold">${activeLoads[0].rate}</div>
+                <div className="font-semibold">${loads.filter(l => l.status === 'in-transit')[0].rate}</div>
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 mb-4">
               <div className="flex items-center justify-between text-sm">
-                <span>Progress</span>
-                <span>{activeLoads[0].progress}%</span>
+                <span>Delivery Progress</span>
+                <span>{loads.filter(l => l.status === 'in-transit')[0].progress || 0}%</span>
               </div>
               <div className="w-full bg-white/20 rounded-full h-3">
                 <div 
                   className="bg-white rounded-full h-3 transition-all duration-300"
-                  style={{ width: `${activeLoads[0].progress}%` }}
+                  style={{ width: `${loads.filter(l => l.status === 'in-transit')[0].progress || 0}%` }}
                 ></div>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-3">
               <button className="flex-1 px-4 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition flex items-center justify-center gap-2">
                 <Navigation className="w-5 h-5" />
                 Navigate
               </button>
               <button 
-                onClick={() => handleStatusUpdate(activeLoads[0].id, 'delivered', { 
+                onClick={() => handleStatusUpdate(loads.filter(l => l.status === 'in-transit')[0].id, 'delivered', { 
                   deliveredAt: new Date().toISOString(),
                   progress: 100 
                 })}
                 className="flex-1 px-4 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition flex items-center justify-center gap-2"
               >
                 <CheckCircle className="w-5 h-5" />
-                Mark Delivered
+                Mark as Delivered
               </button>
             </div>
           </div>
@@ -293,84 +330,101 @@ export function DriverDashboard() {
           </div>
         )}
 
-        {/* Assigned Loads */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Assigned Loads</h2>
-            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-              {loads.filter(l => l.status === 'assigned').length} Assigned by Fleet Owner
-            </span>
+        {/* Assigned Loads - Only show if no active loads */}
+        {!hasActiveLoad && (
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">Assigned Loads</h2>
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                {loads.filter(l => l.status === 'assigned').length} Assigned by Fleet Owner
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              {loads.filter(l => l.status === 'assigned').map((load) => (
+                <div key={load.id} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg font-bold text-gray-900">{load.id}</span>
+                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                          Assigned
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600 mb-2">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-sm">{load.origin} → {load.destination}</span>
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Assigned by: <span className="font-semibold text-gray-700">{load.fleetOwner}</span> • Truck: <span className="font-semibold text-blue-600">{load.truck}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-green-600">${load.rate}</div>
+                      <div className="text-sm text-gray-500">{load.distance}</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 pb-4 border-b border-gray-200">
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Cargo Type</div>
+                      <div className="text-sm font-semibold text-gray-900">{load.cargo}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Weight</div>
+                      <div className="text-sm font-semibold text-gray-900">{load.weight}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Pickup</div>
+                      <div className="text-sm font-semibold text-gray-900">{load.pickup}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Delivery</div>
+                      <div className="text-sm font-semibold text-gray-900">{load.delivery}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => handleStatusUpdate(load.id, 'picking-up', { pickupStarted: new Date().toISOString() })}
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Start Pickup
+                    </button>
+                    <button 
+                      onClick={() => openStatusModal(load)}
+                      className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {loads.filter(l => l.status === 'assigned').length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p>No assigned loads at the moment</p>
+                </div>
+              )}
+            </div>
           </div>
+        )}
 
-          <div className="space-y-4">
-            {loads.filter(l => l.status === 'assigned').map((load) => (
-              <div key={load.id} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg font-bold text-gray-900">{load.id}</span>
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
-                        Assigned
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-600 mb-2">
-                      <MapPin className="w-4 h-4" />
-                      <span className="text-sm">{load.origin} → {load.destination}</span>
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Assigned by: <span className="font-semibold text-gray-700">{load.fleetOwner}</span> • Truck: <span className="font-semibold text-blue-600">{load.truck}</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-green-600">${load.rate}</div>
-                    <div className="text-sm text-gray-500">{load.distance}</div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 pb-4 border-b border-gray-200">
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Cargo Type</div>
-                    <div className="text-sm font-semibold text-gray-900">{load.cargo}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Weight</div>
-                    <div className="text-sm font-semibold text-gray-900">{load.weight}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Pickup</div>
-                    <div className="text-sm font-semibold text-gray-900">{load.pickup}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Delivery</div>
-                    <div className="text-sm font-semibold text-gray-900">{load.delivery}</div>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <button 
-                    onClick={() => handleStatusUpdate(load.id, 'picking-up', { pickupStarted: new Date().toISOString() })}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    Start Pickup
-                  </button>
-                  <button 
-                    onClick={() => openStatusModal(load)}
-                    className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
-                  >
-                    View Details
-                  </button>
-                </div>
+        {/* Notice when load is active */}
+        {hasActiveLoad && loads.filter(l => l.status === 'assigned').length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-yellow-900 mb-1">Active Load in Progress</h3>
+                <p className="text-yellow-800 text-sm">
+                  You have {loads.filter(l => l.status === 'assigned').length} other assigned load(s), but you must complete your current load before starting a new one.
+                </p>
               </div>
-            ))}
-            {loads.filter(l => l.status === 'assigned').length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p>No assigned loads at the moment</p>
-              </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Recent Completed Loads */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
