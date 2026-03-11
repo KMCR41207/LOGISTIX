@@ -65,7 +65,65 @@ const completedLoads = [
 ];
 
 export function DriverDashboard() {
+  const currentDriverId = sessionStorage.getItem('currentUserId') || 'DR001';
+  const currentDriverName = sessionStorage.getItem('currentUserName') || 'Michael Rodriguez';
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+  const [loads, setLoads] = useState(assignedLoads);
+  const [selectedLoad, setSelectedLoad] = useState<any>(null);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+
+  const handleStatusUpdate = (loadId: string, newStatus: string, additionalData?: any) => {
+    // Update local state
+    setLoads(prevLoads => 
+      prevLoads.map(load => 
+        load.id === loadId 
+          ? { ...load, status: newStatus, ...additionalData }
+          : load
+      )
+    );
+
+    // Update in localStorage for fleet owner to see
+    const loadsData = localStorage.getItem('posted_loads');
+    if (loadsData) {
+      const allLoads = JSON.parse(loadsData);
+      const updatedLoads = allLoads.map((load: any) => 
+        load.id === loadId 
+          ? { 
+              ...load, 
+              status: newStatus,
+              driverStatus: newStatus,
+              lastUpdated: new Date().toISOString(),
+              updatedBy: currentDriverName,
+              ...additionalData
+            }
+          : load
+      );
+      localStorage.setItem('posted_loads', JSON.stringify(updatedLoads));
+    }
+
+    // Create status update notification for fleet owner
+    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+    notifications.push({
+      id: `notif-${Date.now()}`,
+      type: 'status_update',
+      from: currentDriverName,
+      fromId: currentDriverId,
+      to: 'fleet-owner',
+      loadId: loadId,
+      status: newStatus,
+      message: `Load ${loadId} status updated to ${newStatus}`,
+      timestamp: new Date().toISOString(),
+      read: false
+    });
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+
+    alert(`Load ${loadId} status updated to ${newStatus}`);
+  };
+
+  const openStatusModal = (load: any) => {
+    setSelectedLoad(load);
+    setIsStatusModalOpen(true);
+  };
 
   return (
     <DashboardLayout role="driver" userName="Michael Rodriguez">
@@ -159,9 +217,78 @@ export function DriverDashboard() {
                 <Navigation className="w-5 h-5" />
                 Navigate
               </button>
-              <button className="flex-1 px-4 py-3 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/20 transition backdrop-blur-sm">
-                Update Status
+              <button 
+                onClick={() => handleStatusUpdate(activeLoads[0].id, 'delivered', { 
+                  deliveredAt: new Date().toISOString(),
+                  progress: 100 
+                })}
+                className="flex-1 px-4 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="w-5 h-5" />
+                Mark Delivered
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* In Progress Loads */}
+        {loads.filter(l => l.status === 'picking-up' || l.status === 'loaded').length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">In Progress</h2>
+              <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-semibold">
+                {loads.filter(l => l.status === 'picking-up' || l.status === 'loaded').length} Active
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              {loads.filter(l => l.status === 'picking-up' || l.status === 'loaded').map((load) => (
+                <div key={load.id} className="border border-yellow-200 bg-yellow-50 rounded-lg p-5">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg font-bold text-gray-900">{load.id}</span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          load.status === 'picking-up' 
+                            ? 'bg-yellow-100 text-yellow-700' 
+                            : 'bg-green-100 text-green-700'
+                        }`}>
+                          {load.status === 'picking-up' ? 'Picking Up' : 'Loaded'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-sm">{load.origin} → {load.destination}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-green-600">${load.rate}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    {load.status === 'picking-up' && (
+                      <button 
+                        onClick={() => handleStatusUpdate(load.id, 'loaded', { loadedAt: new Date().toISOString() })}
+                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition"
+                      >
+                        Confirm Loaded
+                      </button>
+                    )}
+                    {load.status === 'loaded' && (
+                      <button 
+                        onClick={() => handleStatusUpdate(load.id, 'in-transit', { 
+                          transitStarted: new Date().toISOString(),
+                          progress: 0 
+                        })}
+                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+                      >
+                        Start Transit
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -171,12 +298,12 @@ export function DriverDashboard() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Assigned Loads</h2>
             <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-              {assignedLoads.length} Assigned by Fleet Owner
+              {loads.filter(l => l.status === 'assigned').length} Assigned by Fleet Owner
             </span>
           </div>
 
           <div className="space-y-4">
-            {assignedLoads.map((load) => (
+            {loads.filter(l => l.status === 'assigned').map((load) => (
               <div key={load.id} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition">
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -220,16 +347,28 @@ export function DriverDashboard() {
                 </div>
 
                 <div className="flex gap-3">
-                  <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                  <button 
+                    onClick={() => handleStatusUpdate(load.id, 'picking-up', { pickupStarted: new Date().toISOString() })}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                  >
                     <CheckCircle className="w-4 h-4" />
                     Start Pickup
                   </button>
-                  <button className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+                  <button 
+                    onClick={() => openStatusModal(load)}
+                    className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+                  >
                     View Details
                   </button>
                 </div>
               </div>
             ))}
+            {loads.filter(l => l.status === 'assigned').length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p>No assigned loads at the moment</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -263,6 +402,18 @@ export function DriverDashboard() {
         <MetricDetailModal 
           metric={selectedMetric} 
           onClose={() => setSelectedMetric(null)} 
+        />
+      )}
+
+      {/* Status Update Modal */}
+      {isStatusModalOpen && selectedLoad && (
+        <StatusUpdateModal
+          load={selectedLoad}
+          onClose={() => {
+            setIsStatusModalOpen(false);
+            setSelectedLoad(null);
+          }}
+          onUpdateStatus={handleStatusUpdate}
         />
       )}
     </DashboardLayout>
@@ -494,6 +645,145 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
                 />
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface StatusUpdateModalProps {
+  load: any;
+  onClose: () => void;
+  onUpdateStatus: (loadId: string, status: string, data?: any) => void;
+}
+
+function StatusUpdateModal({ load, onClose, onUpdateStatus }: StatusUpdateModalProps) {
+  const [notes, setNotes] = useState("");
+
+  const statusOptions = [
+    { value: 'picking-up', label: 'Picking Up', color: 'yellow', icon: <Package className="w-5 h-5" /> },
+    { value: 'loaded', label: 'Loaded', color: 'green', icon: <CheckCircle className="w-5 h-5" /> },
+    { value: 'in-transit', label: 'In Transit', color: 'blue', icon: <Navigation className="w-5 h-5" /> },
+    { value: 'delivered', label: 'Delivered', color: 'green', icon: <CheckCircle className="w-5 h-5" /> },
+  ];
+
+  const handleUpdate = (status: string) => {
+    const updateData: any = {
+      updatedAt: new Date().toISOString(),
+      notes: notes || undefined
+    };
+
+    if (status === 'picking-up') {
+      updateData.pickupStarted = new Date().toISOString();
+    } else if (status === 'loaded') {
+      updateData.loadedAt = new Date().toISOString();
+    } else if (status === 'in-transit') {
+      updateData.transitStarted = new Date().toISOString();
+      updateData.progress = 0;
+    } else if (status === 'delivered') {
+      updateData.deliveredAt = new Date().toISOString();
+      updateData.progress = 100;
+    }
+
+    onUpdateStatus(load.id, status, updateData);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Update Load Status</h2>
+              <p className="text-blue-100 text-sm mt-1">{load.id}</p>
+            </div>
+            <button 
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-lg transition"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Load Info */}
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div className="flex items-center gap-2 text-gray-600 mb-2">
+              <MapPin className="w-4 h-4" />
+              <span className="text-sm font-medium">{load.origin} → {load.destination}</span>
+            </div>
+            <div className="text-sm text-gray-500">
+              Truck: <span className="font-semibold text-blue-600">{load.truck}</span> • 
+              Cargo: <span className="font-semibold text-gray-700">{load.cargo}</span>
+            </div>
+          </div>
+
+          {/* Status Options */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Select New Status</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {statusOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => handleUpdate(option.value)}
+                  className={`p-4 rounded-lg border-2 transition hover:shadow-lg ${
+                    option.color === 'yellow' ? 'border-yellow-300 hover:bg-yellow-50' :
+                    option.color === 'green' ? 'border-green-300 hover:bg-green-50' :
+                    option.color === 'blue' ? 'border-blue-300 hover:bg-blue-50' :
+                    'border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      option.color === 'yellow' ? 'bg-yellow-100 text-yellow-600' :
+                      option.color === 'green' ? 'bg-green-100 text-green-600' :
+                      option.color === 'blue' ? 'bg-blue-100 text-blue-600' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {option.icon}
+                    </div>
+                    <div className="text-left">
+                      <div className="font-semibold text-gray-900">{option.label}</div>
+                      <div className="text-xs text-gray-500">
+                        {option.value === 'picking-up' && 'Start pickup process'}
+                        {option.value === 'loaded' && 'Cargo loaded'}
+                        {option.value === 'in-transit' && 'On the way'}
+                        {option.value === 'delivered' && 'Complete delivery'}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Notes (Optional)
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+              placeholder="Add any notes about this status update..."
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       </div>
