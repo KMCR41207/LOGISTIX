@@ -25,7 +25,9 @@ const assignedLoads = [
     rate: 1250,
     cargo: "Electronics",
     weight: "24,000 lbs",
-    status: "pending"
+    status: "assigned",
+    fleetOwner: "James Anderson",
+    truck: "TRK-2401"
   },
   { 
     id: "LD-8819", 
@@ -37,7 +39,9 @@ const assignedLoads = [
     rate: 980,
     cargo: "Furniture",
     weight: "18,500 lbs",
-    status: "accepted"
+    status: "assigned",
+    fleetOwner: "James Anderson",
+    truck: "TRK-2398"
   },
 ];
 
@@ -91,12 +95,12 @@ export function DriverDashboard() {
             onClick={() => setSelectedMetric("active")}
           />
           <MetricCard 
-            title="Pending Offers"
+            title="Assigned Loads"
             value="2"
-            subtitle="Awaiting your response"
-            icon={<Clock className="w-6 h-6" />}
+            subtitle="Ready for pickup"
+            icon={<Package className="w-6 h-6" />}
             color="orange"
-            onClick={() => setSelectedMetric("pending")}
+            onClick={() => setSelectedMetric("assigned")}
           />
           <MetricCard 
             title="On-Time Rate"
@@ -162,12 +166,12 @@ export function DriverDashboard() {
           </div>
         )}
 
-        {/* Assigned Loads (Pending) */}
+        {/* Assigned Loads */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Load Offers</h2>
-            <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold">
-              {assignedLoads.length} Pending
+            <h2 className="text-lg font-bold text-gray-900">Assigned Loads</h2>
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+              {assignedLoads.length} Assigned by Fleet Owner
             </span>
           </div>
 
@@ -178,20 +182,16 @@ export function DriverDashboard() {
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-lg font-bold text-gray-900">{load.id}</span>
-                      {load.status === "accepted" && (
-                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          Accepted
-                        </span>
-                      )}
-                      {load.status === "pending" && (
-                        <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold">
-                          Pending
-                        </span>
-                      )}
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                        Assigned
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-600">
+                    <div className="flex items-center gap-2 text-gray-600 mb-2">
                       <MapPin className="w-4 h-4" />
                       <span className="text-sm">{load.origin} → {load.destination}</span>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      Assigned by: <span className="font-semibold text-gray-700">{load.fleetOwner}</span> • Truck: <span className="font-semibold text-blue-600">{load.truck}</span>
                     </div>
                   </div>
                   <div className="text-right">
@@ -219,24 +219,15 @@ export function DriverDashboard() {
                   </div>
                 </div>
 
-                {load.status === "pending" && (
-                  <div className="flex gap-3">
-                    <button className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2">
-                      <CheckCircle className="w-4 h-4" />
-                      Accept Load
-                    </button>
-                    <button className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
-                      Decline
-                    </button>
-                  </div>
-                )}
-
-                {load.status === "accepted" && (
-                  <div className="flex items-center gap-2 text-green-600 text-sm font-semibold">
+                <div className="flex gap-3">
+                  <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2">
                     <CheckCircle className="w-4 h-4" />
-                    You've accepted this load. Await dispatch confirmation.
-                  </div>
-                )}
+                    Start Pickup
+                  </button>
+                  <button className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+                    View Details
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -370,23 +361,23 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
         { month: "Jun", value: 1 },
       ]
     },
-    pending: {
-      title: "Pending Offers",
-      icon: <Clock className="w-8 h-8" />,
+    assigned: {
+      title: "Assigned Loads",
+      icon: <Package className="w-8 h-8" />,
       color: "orange",
       current: "2",
       breakdown: [
-        { label: "New Offers", value: "2", percentage: "100%", change: "+2" },
-        { label: "Under Review", value: "0", percentage: "0%", change: "0" },
-        { label: "Expiring Soon", value: "0", percentage: "0%", change: "0" },
+        { label: "Ready for Pickup", value: "2", percentage: "100%", change: "+2" },
+        { label: "In Progress", value: "0", percentage: "0%", change: "0" },
+        { label: "Completed Today", value: "0", percentage: "0%", change: "0" },
       ],
       monthlyData: [
-        { month: "Jan", value: 5 },
-        { month: "Feb", value: 4 },
-        { month: "Mar", value: 6 },
-        { month: "Apr", value: 3 },
-        { month: "May", value: 4 },
-        { month: "Jun", value: 2 },
+        { month: "Jan", value: 18 },
+        { month: "Feb", value: 20 },
+        { month: "Mar", value: 22 },
+        { month: "Apr", value: 24 },
+        { month: "May", value: 26 },
+        { month: "Jun", value: 28 },
       ]
     },
     ontime: {
