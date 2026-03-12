@@ -185,7 +185,10 @@ export function AdminDashboard() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Top Fleet Owners</h2>
-            <button className="text-sm text-blue-600 hover:text-blue-700 font-semibold">
+            <button 
+              onClick={() => alert('View all fleet owners')}
+              className="text-sm text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
+            >
               View All
             </button>
           </div>

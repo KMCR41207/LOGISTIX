@@ -341,8 +341,8 @@ export function TradingChart({
               <h4 className="text-sm font-bold text-white mb-3">Key Statistics</h4>
               <div className="grid grid-cols-3 gap-3">
                 {stats.map((stat) => (
-                  <div key={stat.label} className={`p-3 rounded-lg ${colorMap.bg} border ${colorMap.border}`}>
-                    <div className="text-xs text-slate-500 mb-1">{stat.label}</div>
+                  <div key={stat.label} className="p-3 rounded-lg bg-slate-700/50 border border-slate-600">
+                    <div className="text-xs text-slate-300 mb-1">{stat.label}</div>
                     <div className="text-lg font-bold text-white">{stat.value}</div>
                     <div className={`text-xs mt-1 ${stat.trend === "up" ? "text-green-400" : "text-red-400"}`}>
                       {stat.trend === "up" ? "↑" : "↓"} {stat.change}
@@ -360,10 +360,10 @@ export function TradingChart({
                 {breakdown.map((item) => (
                   <div key={item.label} className="flex items-center justify-between p-2 rounded hover:bg-slate-700/50 transition">
                     <div className="flex-1">
-                      <div className="text-sm text-slate-300">{item.label}</div>
+                      <div className="text-sm text-slate-200">{item.label}</div>
                       <div className="w-full bg-slate-700 rounded-full h-1.5 mt-1">
                         <div
-                          className={`h-1.5 rounded-full ${colorMap.bg}`}
+                          className="h-1.5 rounded-full bg-blue-500"
                           style={{ width: item.percentage }}
                         ></div>
                       </div>
