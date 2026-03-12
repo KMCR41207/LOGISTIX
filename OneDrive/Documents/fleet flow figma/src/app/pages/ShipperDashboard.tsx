@@ -1,5 +1,6 @@
 import { DashboardLayout } from "../components/DashboardLayout";
 import { ChromaGrid } from "../components/ChromaGrid";
+import { TradingChart } from "../components/TradingChart";
 import { 
   Package, 
   Truck, 
@@ -371,7 +372,7 @@ export function ShipperDashboard() {
 
       {/* Metric Detail Modals */}
       {selectedMetric && (
-        <MetricDetailModal 
+        <TradingMetricModal 
           metric={selectedMetric} 
           onClose={() => setSelectedMetric(null)} 
         />
@@ -432,143 +433,117 @@ interface MetricDetailModalProps {
   onClose: () => void;
 }
 
-function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
+function TradingMetricModal({ metric, onClose }: MetricDetailModalProps) {
   const detailData = {
     shipments: {
       title: "Active Shipments",
       icon: <Truck className="w-8 h-8" />,
       color: "blue",
       current: "2",
-      breakdown: [
-        { label: "In Transit", value: "1", percentage: "50%", change: "+1" },
-        { label: "Assigned", value: "1", percentage: "50%", change: "0" },
-        { label: "Delayed", value: "0", percentage: "0%", change: "0" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jan", value: 8 },
         { month: "Feb", value: 12 },
         { month: "Mar", value: 15 },
         { month: "Apr", value: 18 },
         { month: "May", value: 22 },
         { month: "Jun", value: 24 },
-      ]
+      ],
+      breakdown: [
+        { label: "In Transit", value: "1", percentage: "50%", change: "+1" },
+        { label: "Assigned", value: "1", percentage: "50%", change: "0" },
+        { label: "Delayed", value: "0", percentage: "0%", change: "0" },
+      ],
     },
     pending: {
       title: "Pending Loads",
       icon: <Clock className="w-8 h-8" />,
       color: "orange",
       current: "2",
-      breakdown: [
-        { label: "Awaiting Assignment", value: "2", percentage: "100%", change: "+2" },
-        { label: "Under Review", value: "0", percentage: "0%", change: "0" },
-        { label: "Cancelled", value: "0", percentage: "0%", change: "0" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jan", value: 5 },
         { month: "Feb", value: 3 },
         { month: "Mar", value: 4 },
         { month: "Apr", value: 6 },
         { month: "May", value: 3 },
         { month: "Jun", value: 2 },
-      ]
+      ],
+      breakdown: [
+        { label: "Awaiting Assignment", value: "2", percentage: "100%", change: "+2" },
+        { label: "Under Review", value: "0", percentage: "0%", change: "0" },
+        { label: "Cancelled", value: "0", percentage: "0%", change: "0" },
+      ],
     },
     revenue: {
       title: "Monthly Revenue",
       icon: <DollarSign className="w-8 h-8" />,
       color: "green",
       current: "$12,450",
-      breakdown: [
-        { label: "Long Distance", value: "$7,800", percentage: "62.7%", change: "+$1,200" },
-        { label: "Regional", value: "$3,200", percentage: "25.7%", change: "+$450" },
-        { label: "Local", value: "$1,450", percentage: "11.6%", change: "+$180" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jan", value: 8500 },
         { month: "Feb", value: 9200 },
         { month: "Mar", value: 10100 },
         { month: "Apr", value: 10800 },
         { month: "May", value: 11500 },
         { month: "Jun", value: 12450 },
-      ]
+      ],
+      breakdown: [
+        { label: "Long Distance (>500mi)", value: "$7,800", percentage: "62.6%", change: "+$1,200" },
+        { label: "Regional (100-500mi)", value: "$3,210", percentage: "25.8%", change: "+$450" },
+        { label: "Local (<100mi)", value: "$1,440", percentage: "11.6%", change: "+$180" },
+      ],
     },
     success: {
       title: "Success Rate",
       icon: <TrendingUp className="w-8 h-8" />,
       color: "purple",
       current: "99.2%",
-      breakdown: [
-        { label: "On-Time Deliveries", value: "124", percentage: "99.2%", change: "+8" },
-        { label: "Delayed", value: "1", percentage: "0.8%", change: "-2" },
-        { label: "Issues Resolved", value: "100%", percentage: "100%", change: "0" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jan", value: 97.5 },
         { month: "Feb", value: 98.2 },
         { month: "Mar", value: 98.8 },
         { month: "Apr", value: 99.0 },
         { month: "May", value: 99.1 },
         { month: "Jun", value: 99.2 },
-      ]
+      ],
+      breakdown: [
+        { label: "On-Time Deliveries", value: "124", percentage: "99.2%", change: "+8" },
+        { label: "Delayed", value: "1", percentage: "0.8%", change: "-2" },
+        { label: "Issues Resolved", value: "100%", percentage: "100%", change: "0" },
+      ],
     }
   };
 
   const data = detailData[metric as keyof typeof detailData];
-  
-  const colorClasses = {
-    blue: { bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-200" },
-    green: { bg: "bg-green-100", text: "text-green-600", border: "border-green-200" },
-    purple: { bg: "bg-purple-100", text: "text-purple-600", border: "border-purple-200" },
-    orange: { bg: "bg-orange-100", text: "text-orange-600", border: "border-orange-200" },
-  }[data.color];
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-slate-700">
         {/* Header */}
-        <div className={`${colorClasses.bg} ${colorClasses.border} border-b p-6 flex items-center justify-between`}>
+        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className={`w-16 h-16 ${colorClasses.bg} ${colorClasses.text} rounded-xl flex items-center justify-center border-2 ${colorClasses.border}`}>
+            <div className="w-16 h-16 bg-slate-700 rounded-xl flex items-center justify-center text-white">
               {data.icon}
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{data.title}</h2>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{data.current}</p>
+              <h2 className="text-2xl font-bold text-white">{data.title}</h2>
+              <p className="text-3xl font-bold text-white mt-1">{data.current}</p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="w-10 h-10 rounded-lg hover:bg-white/50 flex items-center justify-center transition"
+            className="w-10 h-10 rounded-lg hover:bg-slate-700 flex items-center justify-center transition text-slate-400 hover:text-white"
           >
-            <X className="w-6 h-6 text-gray-600" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Content - Scrollable */}
         <div className="p-6 space-y-6 overflow-y-auto flex-1">
-          {/* Breakdown */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Breakdown</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {data.breakdown.map((item) => (
-                <div key={item.label} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div className="text-sm text-gray-600 mb-1">{item.label}</div>
-                  <div className="text-2xl font-bold text-gray-900 mb-1">{item.value}</div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">{item.percentage}</span>
-                    <span className={`text-xs font-semibold ${item.change.startsWith('+') ? 'text-green-600' : item.change.startsWith('-') ? 'text-red-600' : 'text-gray-600'}`}>
-                      {item.change}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Chart */}
           <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">6-Month Trend</h3>
+            <h3 className="text-lg font-bold text-white mb-4">6-Month Trend</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={data.monthlyData}>
+              <AreaChart data={data.data}>
                 <defs>
                   <linearGradient id={`color${metric}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={
@@ -585,11 +560,11 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
                     } stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="month" stroke="#94a3b8" style={{ fontSize: "12px" }} />
+                <YAxis stroke="#94a3b8" style={{ fontSize: "12px" }} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px', color: '#fff' }}
                 />
                 <Area 
                   type="monotone" 
@@ -605,6 +580,25 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
                 />
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Breakdown */}
+          <div>
+            <h3 className="text-lg font-bold text-white mb-4">Breakdown</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {data.breakdown.map((item) => (
+                <div key={item.label} className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
+                  <div className="text-sm text-slate-300 mb-1">{item.label}</div>
+                  <div className="text-2xl font-bold text-white mb-1">{item.value}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">{item.percentage}</span>
+                    <span className={`text-xs font-semibold ${item.change.startsWith('+') ? 'text-green-400' : item.change.startsWith('-') ? 'text-red-400' : 'text-slate-400'}`}>
+                      {item.change}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

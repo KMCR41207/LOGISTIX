@@ -1,5 +1,6 @@
 import { DashboardLayout } from "../components/DashboardLayout";
 import { ChromaGrid } from "../components/ChromaGrid";
+import { TradingChart } from "../components/TradingChart";
 import { 
   Package, 
   DollarSign, 
@@ -453,7 +454,7 @@ export function DriverDashboard() {
 
       {/* Metric Detail Modals */}
       {selectedMetric && (
-        <MetricDetailModal 
+        <TradingMetricModal 
           metric={selectedMetric} 
           onClose={() => setSelectedMetric(null)} 
         />
@@ -533,136 +534,110 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
       icon: <DollarSign className="w-8 h-8" />,
       color: "green",
       current: "$8,450",
-      breakdown: [
-        { label: "Long Haul", value: "$5,200", percentage: "61.5%", change: "+$850" },
-        { label: "Regional", value: "$2,400", percentage: "28.4%", change: "+$320" },
-        { label: "Local", value: "$850", percentage: "10.1%", change: "+$120" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jan", value: 6200 },
         { month: "Feb", value: 6800 },
         { month: "Mar", value: 7100 },
         { month: "Apr", value: 7600 },
         { month: "May", value: 8000 },
         { month: "Jun", value: 8450 },
-      ]
+      ],
+      breakdown: [
+        { label: "Long Haul (>500mi)", value: "$5,200", percentage: "61.5%", change: "+$850" },
+        { label: "Regional (100-500mi)", value: "$2,400", percentage: "28.4%", change: "+$320" },
+        { label: "Local (<100mi)", value: "$850", percentage: "10.1%", change: "+$120" },
+      ],
     },
     active: {
       title: "Active Load",
       icon: <Package className="w-8 h-8" />,
       color: "blue",
       current: "1",
-      breakdown: [
-        { label: "In Transit", value: "1", percentage: "100%", change: "0" },
-        { label: "Loading", value: "0", percentage: "0%", change: "0" },
-        { label: "Unloading", value: "0", percentage: "0%", change: "0" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jan", value: 2 },
         { month: "Feb", value: 3 },
         { month: "Mar", value: 2 },
         { month: "Apr", value: 3 },
         { month: "May", value: 2 },
         { month: "Jun", value: 1 },
-      ]
+      ],
+      breakdown: [
+        { label: "In Transit", value: "1", percentage: "100%", change: "0" },
+        { label: "Loading", value: "0", percentage: "0%", change: "0" },
+        { label: "Unloading", value: "0", percentage: "0%", change: "0" },
+      ],
     },
     assigned: {
       title: "Assigned Loads",
       icon: <Package className="w-8 h-8" />,
       color: "orange",
       current: "2",
-      breakdown: [
-        { label: "Ready for Pickup", value: "2", percentage: "100%", change: "+2" },
-        { label: "In Progress", value: "0", percentage: "0%", change: "0" },
-        { label: "Completed Today", value: "0", percentage: "0%", change: "0" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jan", value: 18 },
         { month: "Feb", value: 20 },
         { month: "Mar", value: 22 },
         { month: "Apr", value: 24 },
         { month: "May", value: 26 },
         { month: "Jun", value: 28 },
-      ]
+      ],
+      breakdown: [
+        { label: "Ready for Pickup", value: "2", percentage: "100%", change: "+2" },
+        { label: "In Progress", value: "0", percentage: "0%", change: "0" },
+        { label: "Completed Today", value: "0", percentage: "0%", change: "0" },
+      ],
     },
     ontime: {
       title: "On-Time Rate",
       icon: <TrendingUp className="w-8 h-8" />,
       color: "purple",
-      current: "98%",
-      breakdown: [
-        { label: "On-Time Deliveries", value: "118", percentage: "98.3%", change: "+5" },
-        { label: "Delayed", value: "2", percentage: "1.7%", change: "-1" },
-        { label: "Early Deliveries", value: "45", percentage: "37.5%", change: "+8" },
-      ],
-      monthlyData: [
+      current: "98.3%",
+      data: [
         { month: "Jan", value: 96.5 },
         { month: "Feb", value: 97.0 },
         { month: "Mar", value: 97.5 },
         { month: "Apr", value: 97.8 },
         { month: "May", value: 98.0 },
         { month: "Jun", value: 98.3 },
-      ]
+      ],
+      breakdown: [
+        { label: "On-Time Deliveries", value: "118", percentage: "98.3%", change: "+5" },
+        { label: "Delayed", value: "2", percentage: "1.7%", change: "-1" },
+        { label: "Early Deliveries", value: "45", percentage: "37.5%", change: "+8" },
+      ],
     }
   };
 
   const data = detailData[metric as keyof typeof detailData];
-  
-  const colorClasses = {
-    blue: { bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-200" },
-    green: { bg: "bg-green-100", text: "text-green-600", border: "border-green-200" },
-    purple: { bg: "bg-purple-100", text: "text-purple-600", border: "border-purple-200" },
-    orange: { bg: "bg-orange-100", text: "text-orange-600", border: "border-orange-200" },
-  }[data.color];
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-slate-700">
         {/* Header */}
-        <div className={`${colorClasses.bg} ${colorClasses.border} border-b p-6 flex items-center justify-between`}>
+        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className={`w-16 h-16 ${colorClasses.bg} ${colorClasses.text} rounded-xl flex items-center justify-center border-2 ${colorClasses.border}`}>
+            <div className="w-16 h-16 bg-slate-700 rounded-xl flex items-center justify-center text-white">
               {data.icon}
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{data.title}</h2>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{data.current}</p>
+              <h2 className="text-2xl font-bold text-white">{data.title}</h2>
+              <p className="text-3xl font-bold text-white mt-1">{data.current}</p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="w-10 h-10 rounded-lg hover:bg-white/50 flex items-center justify-center transition"
+            className="w-10 h-10 rounded-lg hover:bg-slate-700 flex items-center justify-center transition text-slate-400 hover:text-white"
           >
-            <X className="w-6 h-6 text-gray-600" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Content - Scrollable */}
         <div className="p-6 space-y-6 overflow-y-auto flex-1">
-          {/* Breakdown */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Breakdown</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {data.breakdown.map((item) => (
-                <div key={item.label} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div className="text-sm text-gray-600 mb-1">{item.label}</div>
-                  <div className="text-2xl font-bold text-gray-900 mb-1">{item.value}</div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">{item.percentage}</span>
-                    <span className={`text-xs font-semibold ${item.change.startsWith('+') ? 'text-green-600' : item.change.startsWith('-') ? 'text-red-600' : 'text-gray-600'}`}>
-                      {item.change}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Chart */}
           <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">6-Month Trend</h3>
+            <h3 className="text-lg font-bold text-white mb-4">6-Month Trend</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={data.monthlyData}>
+              <AreaChart data={data.data}>
                 <defs>
                   <linearGradient id={`color${metric}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={
@@ -679,11 +654,11 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
                     } stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="month" stroke="#94a3b8" style={{ fontSize: "12px" }} />
+                <YAxis stroke="#94a3b8" style={{ fontSize: "12px" }} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px', color: '#fff' }}
                 />
                 <Area 
                   type="monotone" 
@@ -699,6 +674,25 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
                 />
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Breakdown */}
+          <div>
+            <h3 className="text-lg font-bold text-white mb-4">Breakdown</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {data.breakdown.map((item) => (
+                <div key={item.label} className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
+                  <div className="text-sm text-slate-300 mb-1">{item.label}</div>
+                  <div className="text-2xl font-bold text-white mb-1">{item.value}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">{item.percentage}</span>
+                    <span className={`text-xs font-semibold ${item.change.startsWith('+') ? 'text-green-400' : item.change.startsWith('-') ? 'text-red-400' : 'text-slate-400'}`}>
+                      {item.change}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

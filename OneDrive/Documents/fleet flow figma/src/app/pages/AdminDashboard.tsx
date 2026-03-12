@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { ChromaGrid } from "../components/ChromaGrid";
+import { TradingChart } from "../components/TradingChart";
 import { 
   Users, 
   Truck, 
@@ -111,45 +112,44 @@ export function AdminDashboard() {
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Platform Revenue */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Platform Revenue Growth</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={platformStats}>
-                <defs>
-                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                />
-                <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} fill="url(#colorRevenue)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <TradingChart
+            title="Platform Revenue Growth"
+            subtitle="Monthly revenue trend"
+            data={platformStats}
+            dataKey="revenue"
+            color="blue"
+            icon={<DollarSign className="w-5 h-5" />}
+            stats={[
+              { label: "Current", value: "$245,000", change: "+18%", trend: "up" },
+              { label: "Average", value: "$189,000", change: "+12%", trend: "up" },
+              { label: "Peak", value: "$245,000", change: "+25%", trend: "up" },
+            ]}
+            breakdown={[
+              { label: "Commission Fees", value: "$185,000", percentage: "75.5%", change: "+$28,000" },
+              { label: "Subscription", value: "$42,000", percentage: "17.1%", change: "+$6,000" },
+              { label: "Premium Features", value: "$18,000", percentage: "7.4%", change: "+$3,000" },
+            ]}
+          />
 
           {/* User Distribution */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">User Growth by Type</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={userGrowthData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="date" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                />
-                <Legend />
-                <Line type="monotone" dataKey="fleetOwners" stroke="#3b82f6" strokeWidth={2} name="Fleet Owners" />
-                <Line type="monotone" dataKey="drivers" stroke="#10b981" strokeWidth={2} name="Drivers" />
-                <Line type="monotone" dataKey="shippers" stroke="#f59e0b" strokeWidth={2} name="Shippers" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <TradingChart
+            title="User Growth by Type"
+            subtitle="Weekly user distribution"
+            data={userGrowthData.map(item => ({ month: item.date, value: item.drivers }))}
+            dataKey="value"
+            color="green"
+            icon={<Users className="w-5 h-5" />}
+            stats={[
+              { label: "Fleet Owners", value: "595", change: "+45", trend: "up" },
+              { label: "Drivers", value: "2,150", change: "+230", trend: "up" },
+              { label: "Shippers", value: "1,140", change: "+60", trend: "up" },
+            ]}
+            breakdown={[
+              { label: "Fleet Owners", value: "595", percentage: "17.3%", change: "+45" },
+              { label: "Drivers", value: "2,150", percentage: "62.4%", change: "+230" },
+              { label: "Shippers", value: "1,140", percentage: "20.3%", change: "+60" },
+            ]}
+          />
         </div>
 
         {/* User Distribution Cards */}
@@ -401,199 +401,246 @@ interface MetricDetailModalProps {
 }
 
 function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
+  const [timeframe, setTimeframe] = useState("6M");
+  
   const detailData = {
     users: {
       title: "Total Users",
       icon: <Users className="w-8 h-8" />,
       color: "blue",
       current: "3,445",
-      breakdown: [
-        { label: "Fleet Owners", value: "595", percentage: "17.3%", change: "+45" },
-        { label: "Drivers", value: "2,150", percentage: "62.4%", change: "+230" },
-        { label: "Shippers", value: "700", percentage: "20.3%", change: "+60" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jul", value: 2850 },
         { month: "Aug", value: 2920 },
         { month: "Sep", value: 3050 },
         { month: "Oct", value: 3180 },
         { month: "Nov", value: 3340 },
         { month: "Dec", value: 3445 },
-      ]
+      ],
+      breakdown: [
+        { label: "Fleet Owners", value: "595", percentage: "17.3%", change: "+45" },
+        { label: "Drivers", value: "2,150", percentage: "62.4%", change: "+230" },
+        { label: "Shippers", value: "700", percentage: "20.3%", change: "+60" },
+      ],
     },
     trucks: {
       title: "Active Trucks",
       icon: <Truck className="w-8 h-8" />,
       color: "green",
       current: "15,240",
-      breakdown: [
-        { label: "In Transit", value: "8,420", percentage: "55.2%", change: "+320" },
-        { label: "Available", value: "5,180", percentage: "34.0%", change: "+180" },
-        { label: "Maintenance", value: "1,640", percentage: "10.8%", change: "-50" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jul", value: 13200 },
         { month: "Aug", value: 13650 },
         { month: "Sep", value: 14100 },
         { month: "Oct", value: 14520 },
         { month: "Nov", value: 14880 },
         { month: "Dec", value: 15240 },
-      ]
+      ],
+      breakdown: [
+        { label: "In Transit", value: "8,420", percentage: "55.2%", change: "+320" },
+        { label: "Available", value: "5,180", percentage: "34.0%", change: "+180" },
+        { label: "Maintenance", value: "1,640", percentage: "10.8%", change: "-50" },
+      ],
     },
     loads: {
       title: "Monthly Loads",
       icon: <Package className="w-8 h-8" />,
       color: "purple",
       current: "6,100",
-      breakdown: [
-        { label: "Completed", value: "5,420", percentage: "88.9%", change: "+680" },
-        { label: "In Progress", value: "520", percentage: "8.5%", change: "+45" },
-        { label: "Pending", value: "160", percentage: "2.6%", change: "+20" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jul", value: 4200 },
         { month: "Aug", value: 4580 },
         { month: "Sep", value: 4920 },
         { month: "Oct", value: 5280 },
         { month: "Nov", value: 5650 },
         { month: "Dec", value: 6100 },
-      ]
+      ],
+      breakdown: [
+        { label: "Completed", value: "5,420", percentage: "88.9%", change: "+680" },
+        { label: "In Progress", value: "520", percentage: "8.5%", change: "+45" },
+        { label: "Pending", value: "160", percentage: "2.6%", change: "+20" },
+      ],
     },
     revenue: {
       title: "Platform Revenue",
       icon: <DollarSign className="w-8 h-8" />,
       color: "orange",
       current: "$245,000",
-      breakdown: [
-        { label: "Commission Fees", value: "$185,000", percentage: "75.5%", change: "+$28,000" },
-        { label: "Subscription", value: "$42,000", percentage: "17.1%", change: "+$6,000" },
-        { label: "Premium Features", value: "$18,000", percentage: "7.4%", change: "+$3,000" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jul", value: 168000 },
         { month: "Aug", value: 185000 },
         { month: "Sep", value: 198000 },
         { month: "Oct", value: 215000 },
         { month: "Nov", value: 228000 },
         { month: "Dec", value: 245000 },
-      ]
+      ],
+      breakdown: [
+        { label: "Commission Fees", value: "$185,000", percentage: "75.5%", change: "+$28,000" },
+        { label: "Subscription", value: "$42,000", percentage: "17.1%", change: "+$6,000" },
+        { label: "Premium Features", value: "$18,000", percentage: "7.4%", change: "+$3,000" },
+      ],
     },
     fleetOwners: {
       title: "Fleet Owners",
       icon: <Truck className="w-8 h-8" />,
       color: "blue",
       current: "595",
-      breakdown: [
-        { label: "Active (30+ days)", value: "485", percentage: "81.5%", change: "+38" },
-        { label: "New (< 30 days)", value: "85", percentage: "14.3%", change: "+12" },
-        { label: "Inactive", value: "25", percentage: "4.2%", change: "-5" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jul", value: 480 },
         { month: "Aug", value: 505 },
         { month: "Sep", value: 525 },
         { month: "Oct", value: 545 },
         { month: "Nov", value: 570 },
         { month: "Dec", value: 595 },
-      ]
+      ],
+      breakdown: [
+        { label: "Active (30+ days)", value: "485", percentage: "81.5%", change: "+38" },
+        { label: "New (< 30 days)", value: "85", percentage: "14.3%", change: "+12" },
+        { label: "Inactive", value: "25", percentage: "4.2%", change: "-5" },
+      ],
     },
     drivers: {
       title: "Active Drivers",
       icon: <Users className="w-8 h-8" />,
       color: "green",
       current: "2,150",
-      breakdown: [
-        { label: "Currently Driving", value: "1,280", percentage: "59.5%", change: "+145" },
-        { label: "Available", value: "720", percentage: "33.5%", change: "+65" },
-        { label: "Off Duty", value: "150", percentage: "7.0%", change: "+20" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jul", value: 1650 },
         { month: "Aug", value: 1750 },
         { month: "Sep", value: 1850 },
         { month: "Oct", value: 1950 },
         { month: "Nov", value: 2050 },
         { month: "Dec", value: 2150 },
-      ]
+      ],
+      breakdown: [
+        { label: "Currently Driving", value: "1,280", percentage: "59.5%", change: "+145" },
+        { label: "Available", value: "720", percentage: "33.5%", change: "+65" },
+        { label: "Off Duty", value: "150", percentage: "7.0%", change: "+20" },
+      ],
     },
     shippers: {
       title: "Shippers",
       icon: <Package className="w-8 h-8" />,
       color: "orange",
       current: "1,140",
-      breakdown: [
-        { label: "Enterprise", value: "180", percentage: "15.8%", change: "+12" },
-        { label: "Small Business", value: "685", percentage: "60.1%", change: "+38" },
-        { label: "Individual", value: "275", percentage: "24.1%", change: "+10" },
-      ],
-      monthlyData: [
+      data: [
         { month: "Jul", value: 920 },
         { month: "Aug", value: 970 },
         { month: "Sep", value: 1010 },
         { month: "Oct", value: 1055 },
         { month: "Nov", value: 1095 },
         { month: "Dec", value: 1140 },
-      ]
+      ],
+      breakdown: [
+        { label: "Enterprise", value: "180", percentage: "15.8%", change: "+12" },
+        { label: "Small Business", value: "685", percentage: "60.1%", change: "+38" },
+        { label: "Individual", value: "275", percentage: "24.1%", change: "+10" },
+      ],
     }
   };
 
   const data = detailData[metric as keyof typeof detailData];
-  
-  const colorClasses = {
-    blue: { bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-200" },
-    green: { bg: "bg-green-100", text: "text-green-600", border: "border-green-200" },
-    purple: { bg: "bg-purple-100", text: "text-purple-600", border: "border-purple-200" },
-    orange: { bg: "bg-orange-100", text: "text-orange-600", border: "border-orange-200" },
-  }[data.color];
+
+  // Filter data based on timeframe
+  const filteredData = useMemo(() => {
+    const baseData = [...data.data];
+    const latestValue = baseData[baseData.length - 1]?.value || 0;
+    
+    switch (timeframe) {
+      case "1D":
+        return Array.from({ length: 24 }, (_, i) => ({
+          month: `${i}:00`,
+          value: Math.round(latestValue * (0.95 + Math.random() * 0.1))
+        }));
+      case "1W":
+        return Array.from({ length: 7 }, (_, i) => ({
+          month: `Day ${i + 1}`,
+          value: Math.round(latestValue * (0.92 + Math.random() * 0.16))
+        }));
+      case "1M":
+        return Array.from({ length: 4 }, (_, i) => ({
+          month: `Week ${i + 1}`,
+          value: Math.round(latestValue * (0.88 + Math.random() * 0.24))
+        }));
+      case "3M":
+        return baseData.slice(-3);
+      case "6M":
+        return baseData;
+      case "1Y":
+        const yearData = Array.from({ length: 12 }, (_, i) => {
+          const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          const growthFactor = 0.7 + (i / 12) * 0.6;
+          return {
+            month: monthNames[i],
+            value: Math.round(latestValue * growthFactor * (0.9 + Math.random() * 0.2))
+          };
+        });
+        return yearData;
+      default:
+        return baseData;
+    }
+  }, [data.data, timeframe]);
+
+  const currentValue = filteredData[filteredData.length - 1]?.value || 0;
+  const previousValue = filteredData[0]?.value || 0;
+  const change = currentValue - previousValue;
+  const changePercent = previousValue !== 0 ? ((change / previousValue) * 100).toFixed(2) : "0.00";
+  const isPositive = change >= 0;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-slate-700">
         {/* Header */}
-        <div className={`${colorClasses.bg} ${colorClasses.border} border-b p-6 flex items-center justify-between`}>
+        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className={`w-16 h-16 ${colorClasses.bg} ${colorClasses.text} rounded-xl flex items-center justify-center border-2 ${colorClasses.border}`}>
+            <div className="w-16 h-16 bg-slate-700 rounded-xl flex items-center justify-center text-white">
               {data.icon}
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{data.title}</h2>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{data.current}</p>
+              <h2 className="text-2xl font-bold text-white">{data.title}</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-3xl font-bold text-white">{currentValue.toLocaleString()}</p>
+                <div className={`flex items-center gap-1 ${isPositive ? "text-green-400" : "text-red-400"}`}>
+                  {isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                  <span className="text-sm font-semibold">{isPositive ? "+" : ""}{change.toLocaleString()} ({changePercent}%)</span>
+                </div>
+              </div>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="w-10 h-10 rounded-lg hover:bg-white/50 flex items-center justify-center transition"
+            className="w-10 h-10 rounded-lg hover:bg-slate-700 flex items-center justify-center transition text-slate-400 hover:text-white"
           >
-            <X className="w-6 h-6 text-gray-600" />
+            <X className="w-6 h-6" />
           </button>
+        </div>
+
+        {/* Timeframe Selector */}
+        <div className="px-6 py-4 border-b border-slate-700">
+          <div className="flex gap-2">
+            {["1D", "1W", "1M", "3M", "6M", "1Y"].map((tf) => (
+              <button
+                key={tf}
+                onClick={() => setTimeframe(tf)}
+                className={`px-3 py-1 rounded text-xs font-semibold transition ${
+                  timeframe === tf
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-400 hover:text-slate-300"
+                }`}
+              >
+                {tf}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Content - Scrollable */}
         <div className="p-6 space-y-6 overflow-y-auto flex-1">
-          {/* Breakdown */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Breakdown</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {data.breakdown.map((item) => (
-                <div key={item.label} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div className="text-sm text-gray-600 mb-1">{item.label}</div>
-                  <div className="text-2xl font-bold text-gray-900 mb-1">{item.value}</div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">{item.percentage}</span>
-                    <span className={`text-xs font-semibold ${item.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
-                      {item.change}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Chart */}
           <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">6-Month Trend</h3>
+            <h3 className="text-lg font-bold text-white mb-4">Trend Analysis</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={data.monthlyData}>
+              <AreaChart data={filteredData}>
                 <defs>
                   <linearGradient id={`color${metric}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={
@@ -610,11 +657,11 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
                     } stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="month" stroke="#94a3b8" style={{ fontSize: "12px" }} />
+                <YAxis stroke="#94a3b8" style={{ fontSize: "12px" }} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px', color: '#fff' }}
                 />
                 <Area 
                   type="monotone" 
@@ -630,6 +677,25 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
                 />
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Breakdown */}
+          <div>
+            <h3 className="text-lg font-bold text-white mb-4">Breakdown</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {data.breakdown.map((item) => (
+                <div key={item.label} className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
+                  <div className="text-sm text-slate-300 mb-1">{item.label}</div>
+                  <div className="text-2xl font-bold text-white mb-1">{item.value}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">{item.percentage}</span>
+                    <span className={`text-xs font-semibold ${item.change.startsWith('+') ? 'text-green-400' : item.change.startsWith('-') ? 'text-red-400' : 'text-slate-400'}`}>
+                      {item.change}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -1,5 +1,7 @@
 import { DashboardLayout } from "../components/DashboardLayout";
 import { ChromaGrid } from "../components/ChromaGrid";
+import { TradingChart } from "../components/TradingChart";
+import { CandlestickChart } from "../components/CandlestickChart";
 import { 
   Truck, 
   Users, 
@@ -163,58 +165,43 @@ export function FleetOwnerDashboard() {
         </ChromaGrid>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Revenue & Profit Chart */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Revenue & Profit Trends</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                />
-                <Legend />
-                <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} name="Revenue ($)" />
-                <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={2} name="Profit ($)" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <TradingChart
+            title="Revenue & Profit Trends"
+            subtitle="Monthly performance analysis"
+            data={revenueData}
+            dataKey="revenue"
+            color="purple"
+            icon={<DollarSign className="w-5 h-5" />}
+            stats={[
+              { label: "Revenue", value: "$234,500", change: "+18%", trend: "up" },
+              { label: "Profit", value: "$76,200", change: "+15%", trend: "up" },
+              { label: "Margin", value: "32.5%", change: "+2.1%", trend: "up" },
+            ]}
+            breakdown={[
+              { label: "Long Haul Revenue", value: "$145,000", percentage: "61.8%", change: "+$18,000" },
+              { label: "Regional Revenue", value: "$62,500", percentage: "26.7%", change: "+$8,500" },
+              { label: "Local Revenue", value: "$27,000", percentage: "11.5%", change: "+$3,200" },
+            ]}
+          />
 
-          {/* Fleet Status */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Fleet Status</h2>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={truckStatusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {truckStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="mt-4 space-y-2">
-              {truckStatusData.map((item) => (
-                <div key={item.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-                    <span className="text-sm text-gray-700">{item.name}</span>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-900">{item.value} trucks</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Fleet Status Chart */}
+          <CandlestickChart
+            title="Fleet Performance"
+            subtitle="Truck utilization candlestick"
+            data={revenueData.map(item => ({ ...item, close: item.revenue / 1000 }))}
+            dataKeys={{
+              open: "revenue",
+              high: "revenue", 
+              low: "profit",
+              close: "close",
+              volume: "profit"
+            }}
+            color="green"
+            icon={<Truck className="w-5 h-5" />}
+            height={300}
+          />
         </div>
 
         {/* Top Performing Trucks */}
@@ -415,7 +402,7 @@ export function FleetOwnerDashboard() {
 
       {/* Metric Detail Modals */}
       {selectedMetric && (
-        <MetricDetailModal 
+        <TradingMetricModal 
           metric={selectedMetric} 
           onClose={() => setSelectedMetric(null)} 
         />
@@ -484,7 +471,185 @@ interface MetricDetailModalProps {
   onClose: () => void;
 }
 
-function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
+function TradingMetricModal({ metric, onClose }: MetricDetailModalProps) {
+  const detailData = {
+    trucks: {
+      title: "Total Trucks",
+      icon: <Truck className="w-8 h-8" />,
+      color: "blue",
+      current: "53",
+      data: [
+        { month: "Jan", value: 45 },
+        { month: "Feb", value: 47 },
+        { month: "Mar", value: 48 },
+        { month: "Apr", value: 49 },
+        { month: "May", value: 50 },
+        { month: "Jun", value: 53 },
+      ],
+      breakdown: [
+        { label: "Active on Road", value: "42", percentage: "79.2%", change: "+5" },
+        { label: "Idle/Available", value: "8", percentage: "15.1%", change: "-1" },
+        { label: "In Maintenance", value: "3", percentage: "5.7%", change: "-1" },
+      ],
+    },
+    drivers: {
+      title: "Active Drivers",
+      icon: <Users className="w-8 h-8" />,
+      color: "green",
+      current: "48",
+      data: [
+        { month: "Jan", value: 38 },
+        { month: "Feb", value: 40 },
+        { month: "Mar", value: 42 },
+        { month: "Apr", value: 44 },
+        { month: "May", value: 46 },
+        { month: "Jun", value: 48 },
+      ],
+      breakdown: [
+        { label: "On Road Now", value: "42", percentage: "87.5%", change: "+8" },
+        { label: "Available", value: "4", percentage: "8.3%", change: "-2" },
+        { label: "Off Duty", value: "2", percentage: "4.2%", change: "-1" },
+      ],
+    },
+    revenue: {
+      title: "Monthly Revenue",
+      icon: <DollarSign className="w-8 h-8" />,
+      color: "purple",
+      current: "$234,500",
+      data: [
+        { month: "Jan", value: 145000 },
+        { month: "Feb", value: 162000 },
+        { month: "Mar", value: 178000 },
+        { month: "Apr", value: 195000 },
+        { month: "May", value: 210000 },
+        { month: "Jun", value: 234500 },
+      ],
+      breakdown: [
+        { label: "Long Haul (>500mi)", value: "$145,000", percentage: "61.8%", change: "+$18,000" },
+        { label: "Regional (100-500mi)", value: "$62,500", percentage: "26.7%", change: "+$8,500" },
+        { label: "Local Delivery (<100mi)", value: "$27,000", percentage: "11.5%", change: "+$3,200" },
+      ],
+    },
+    profit: {
+      title: "Total Profit",
+      icon: <TrendingUp className="w-8 h-8" />,
+      color: "orange",
+      current: "$76,200",
+      data: [
+        { month: "Jan", value: 42000 },
+        { month: "Feb", value: 48000 },
+        { month: "Mar", value: 55000 },
+        { month: "Apr", value: 61000 },
+        { month: "May", value: 68000 },
+        { month: "Jun", value: 76200 },
+      ],
+      breakdown: [
+        { label: "Operating Profit (32.5%)", value: "$58,400", percentage: "76.6%", change: "+$9,200" },
+        { label: "Fuel Savings (5.5%)", value: "$12,800", percentage: "16.8%", change: "+$2,100" },
+        { label: "Other Income (2.1%)", value: "$5,000", percentage: "6.6%", change: "+$800" },
+      ],
+    }
+  };
+
+  const data = detailData[metric as keyof typeof detailData];
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-slate-700">
+        {/* Header */}
+        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-slate-700 rounded-xl flex items-center justify-center text-white">
+              {data.icon}
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">{data.title}</h2>
+              <p className="text-3xl font-bold text-white mt-1">{data.current}</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose}
+            className="w-10 h-10 rounded-lg hover:bg-slate-700 flex items-center justify-center transition text-slate-400 hover:text-white"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Content - Scrollable */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+          {/* Chart */}
+          <div>
+            <h3 className="text-lg font-bold text-white mb-4">6-Month Trend</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={data.data}>
+                <defs>
+                  <linearGradient id={`color${metric}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={
+                      data.color === 'blue' ? '#3b82f6' :
+                      data.color === 'green' ? '#10b981' :
+                      data.color === 'purple' ? '#a855f7' :
+                      '#f59e0b'
+                    } stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={
+                      data.color === 'blue' ? '#3b82f6' :
+                      data.color === 'green' ? '#10b981' :
+                      data.color === 'purple' ? '#a855f7' :
+                      '#f59e0b'
+                    } stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="month" stroke="#94a3b8" style={{ fontSize: "12px" }} />
+                <YAxis stroke="#94a3b8" style={{ fontSize: "12px" }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px', color: '#fff' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke={
+                    data.color === 'blue' ? '#3b82f6' :
+                    data.color === 'green' ? '#10b981' :
+                    data.color === 'purple' ? '#a855f7' :
+                    '#f59e0b'
+                  }
+                  strokeWidth={2} 
+                  fill={`url(#color${metric})`} 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Breakdown */}
+          <div>
+            <h3 className="text-lg font-bold text-white mb-4">Breakdown</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {data.breakdown.map((item) => (
+                <div key={item.label} className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
+                  <div className="text-sm text-slate-300 mb-1">{item.label}</div>
+                  <div className="text-2xl font-bold text-white mb-1">{item.value}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">{item.percentage}</span>
+                    <span className={`text-xs font-semibold ${item.change.startsWith('+') ? 'text-green-400' : item.change.startsWith('-') ? 'text-red-400' : 'text-slate-400'}`}>
+                      {item.change}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface MetricDetailModalProps2 {
+  metric: string;
+  onClose: () => void;
+}
+
+function MetricDetailModal({ metric, onClose }: MetricDetailModalProps2) {
   const detailData = {
     trucks: {
       title: "Total Trucks",
@@ -530,9 +695,9 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
       color: "purple",
       current: "$234,500",
       breakdown: [
-        { label: "Long Haul", value: "$145,000", percentage: "61.8%", change: "+$18,000" },
-        { label: "Regional", value: "$62,500", percentage: "26.7%", change: "+$8,500" },
-        { label: "Local Delivery", value: "$27,000", percentage: "11.5%", change: "+$3,200" },
+        { label: "Long Haul (>500mi)", value: "$145,000", percentage: "61.8%", change: "+$18,000" },
+        { label: "Regional (100-500mi)", value: "$62,500", percentage: "26.7%", change: "+$8,500" },
+        { label: "Local Delivery (<100mi)", value: "$27,000", percentage: "11.5%", change: "+$3,200" },
       ],
       monthlyData: [
         { month: "Jan", value: 145000 },
@@ -549,9 +714,9 @@ function MetricDetailModal({ metric, onClose }: MetricDetailModalProps) {
       color: "orange",
       current: "$76,200",
       breakdown: [
-        { label: "Operating Profit", value: "$58,400", percentage: "76.6%", change: "+$9,200" },
-        { label: "Fuel Savings", value: "$12,800", percentage: "16.8%", change: "+$2,100" },
-        { label: "Other Income", value: "$5,000", percentage: "6.6%", change: "+$800" },
+        { label: "Operating Profit (32.5%)", value: "$58,400", percentage: "76.6%", change: "+$9,200" },
+        { label: "Fuel Savings (5.5%)", value: "$12,800", percentage: "16.8%", change: "+$2,100" },
+        { label: "Other Income (2.1%)", value: "$5,000", percentage: "6.6%", change: "+$800" },
       ],
       monthlyData: [
         { month: "Jan", value: 42000 },

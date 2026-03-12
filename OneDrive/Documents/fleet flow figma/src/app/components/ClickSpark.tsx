@@ -29,6 +29,7 @@ const ClickSpark = ({
   children
 }: ClickSparkProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const sparksRef = useRef<Spark[]>([]);
   const startTimeRef = useRef<number | null>(null);
 
@@ -132,33 +133,55 @@ const ClickSpark = ({
     };
   }, [sparkColor, sparkSize, sparkRadius, sparkCount, duration, easeFunc, extraScale]);
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  // Global click handler that works on any element
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const canvas = canvasRef.current;
+      const container = containerRef.current;
+      if (!canvas || !container) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const now = performance.now();
+      // Get the container's position relative to the viewport
+      const containerRect = container.getBoundingClientRect();
+      
+      // Check if the click is within the container bounds
+      if (
+        e.clientX >= containerRect.left &&
+        e.clientX <= containerRect.right &&
+        e.clientY >= containerRect.top &&
+        e.clientY <= containerRect.bottom
+      ) {
+        // Calculate relative position within the container
+        const x = e.clientX - containerRect.left;
+        const y = e.clientY - containerRect.top;
+        const now = performance.now();
 
-    const newSparks = Array.from({ length: sparkCount }, (_, i) => ({
-      x,
-      y,
-      angle: (2 * Math.PI * i) / sparkCount,
-      startTime: now
-    }));
+        const newSparks = Array.from({ length: sparkCount }, (_, i) => ({
+          x,
+          y,
+          angle: (2 * Math.PI * i) / sparkCount,
+          startTime: now
+        }));
 
-    sparksRef.current.push(...newSparks);
-  };
+        sparksRef.current.push(...newSparks);
+      }
+    };
+
+    // Listen to clicks on the entire document
+    document.addEventListener('click', handleGlobalClick, true);
+
+    return () => {
+      document.removeEventListener('click', handleGlobalClick, true);
+    };
+  }, [sparkCount]);
 
   return (
     <div
+      ref={containerRef}
       style={{
         position: 'relative',
         width: '100%',
         height: '100%'
       }}
-      onClick={handleClick}
     >
       <canvas
         ref={canvasRef}
@@ -170,7 +193,8 @@ const ClickSpark = ({
           position: 'absolute',
           top: 0,
           left: 0,
-          pointerEvents: 'none'
+          pointerEvents: 'none',
+          zIndex: 9999
         }}
       />
       {children}

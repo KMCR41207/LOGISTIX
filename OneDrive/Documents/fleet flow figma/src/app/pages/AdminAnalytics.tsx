@@ -1,6 +1,8 @@
 import { DashboardLayout } from "../components/DashboardLayout";
+import { TradingChart } from "../components/TradingChart";
+import { CandlestickChart } from "../components/CandlestickChart";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { TrendingUp, Users, Truck, Package } from "lucide-react";
+import { TrendingUp, Users, Truck, Package, DollarSign } from "lucide-react";
 
 const revenueData = [
   { month: "Jan", revenue: 125000 },
@@ -82,35 +84,41 @@ export function AdminAnalytics() {
         {/* Charts */}
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Revenue Chart */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Revenue Growth</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
-                <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <TradingChart
+            title="Revenue Growth"
+            subtitle="Monthly platform revenue"
+            data={revenueData}
+            dataKey="revenue"
+            color="blue"
+            icon={<DollarSign className="w-5 h-5" />}
+            stats={[
+              { label: "Current", value: "$245,000", change: "+18%", trend: "up" },
+              { label: "Average", value: "$189,000", change: "+12%", trend: "up" },
+              { label: "Peak", value: "$245,000", change: "+25%", trend: "up" },
+            ]}
+            breakdown={[
+              { label: "Commission Fees", value: "$185,000", percentage: "75.5%", change: "+$28,000" },
+              { label: "Subscription", value: "$42,000", percentage: "17.1%", change: "+$6,000" },
+              { label: "Premium Features", value: "$18,000", percentage: "7.4%", change: "+$3,000" },
+            ]}
+          />
 
           {/* User Growth Chart */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">User Growth by Type</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={userGrowthData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="week" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
-                <Legend />
-                <Bar dataKey="fleetOwners" fill="#3b82f6" name="Fleet Owners" />
-                <Bar dataKey="drivers" fill="#10b981" name="Drivers" />
-                <Bar dataKey="shippers" fill="#f59e0b" name="Shippers" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <CandlestickChart
+            title="User Growth Analysis"
+            subtitle="User acquisition candlestick"
+            data={userGrowthData.map(item => ({ ...item, close: item.drivers }))}
+            dataKeys={{
+              open: "fleetOwners",
+              high: "drivers", 
+              low: "shippers",
+              close: "close",
+              volume: "drivers"
+            }}
+            color="green"
+            icon={<Users className="w-5 h-5" />}
+            height={300}
+          />
         </div>
       </div>
     </DashboardLayout>
